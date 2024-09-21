@@ -6,6 +6,8 @@
 
 ![Threading](https://github.com/Thevaulthunter0/Simulation_ET_ER/blob/main/Image/TP1_DiagrammeThread.drawio.png)
 
+Ce sont les thread enfants des thread Er et Et, par exemple Thread Er con 1, qui doivent lire et écrire dans les files et non les thread principaux(thread Er/Et).
+
 Pour envoyer des données entre couche nous allons les envoyers dans la Queue(file) de l'autre couche pour leur permettre d'y accèder quand bon leur semble.**Les queues de lib/queue sont déja thread-safe!**
 
 Par contre l'accès aux fichier(S_lec, S_ect, L_ect, L_lec) ne sont pas thread-safe.
