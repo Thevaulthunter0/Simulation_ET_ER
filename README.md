@@ -1,10 +1,10 @@
 # Structure #
-![Architecture](Image\TP1_Diagrammedrawio.png)
+![Architecture](https://github.com/Thevaulthunter0/Simulation_ET_ER/blob/main/Image/TP1_Diagrammedrawio.png)
 
 # Threading et Queue #
 À partir du main, deux threads sont créés. L'un pour la couche réseau et l'autre pour la couche transport. Chaque couche(thread original) devront créer leur threads à chaque fois qu'un nouveau numéro de connexion sera utilisé.
 
-![Threading]()
+![Threading](https://github.com/Thevaulthunter0/Simulation_ET_ER/blob/main/Image/TP1_DiagrammeThread.drawio.png)
 
 Pour envoyer des données entre couche nous allons les envoyers dans la Queue(file) de l'autre couche pour leur permettre d'y accèder quand bon leur semble.**Les queues de lib/queue sont déja thread-safe!**
 
@@ -19,28 +19,38 @@ pack donne des bytes : '\x01\x0f\x03\x04'
 unpack donne un tuple : (10,4,9)
 
 # Setup GitHub #
-1. Cloner le repo
+## 1. Cloner le repo
+```
 git clone https://github.com/Thevaulthunter0/Simulation_ET_ER
+```
 
-2. Creer votre branche
+## 2. Creer votre branche
+```
 git checkout -b nom_de_branche
+```
 
-3. Push vos changement
+## 3. Push vos changement
+```
 git add .
 git commit -m "Description de vos changements"
-git push origin nom_de_branche 
+git push origin nom_de_branche
+```
 **Seulement push sur votre branches**
 
-4. Merger votre branche sur le main
+## 4. Merger votre branche sur le main
 Allez dans la section Pull Request sur github pour en créer une.
 
-5. Syncronisation de la branche main
+## 5. Syncronisation de la branche main
 Effectuer régulièrement une syncronisation de la branche main pour pouvoir accèder au nouveau code.
+```
 git checkout main
 git fetch origin
 git pull origin main
+```
 
 # Documentation #
 Threading : https://docs.python.org/3/library/threading.html
+
 Queue : https://docs.python.org/3/library/queue.html
+
 Struct : https://docs.python.org/3/library/struct.html
