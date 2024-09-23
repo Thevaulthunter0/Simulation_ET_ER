@@ -23,44 +23,65 @@ class service_manipulation_donnees() :
         
         return numCon + type_paquet_pack + donnee 
     
+    '''
+    
+    '''
     def unpack_n_data_req(pack_data, longeur_donnee) :
         _numCon = pack_data[0]
         type_paquet = pack_data[1]
-        _numPaquet = (type_paquet >> 5) & 0b111
-        _dernierPaquet = (type_paquet >> 4) & 0b1
-        _numProchainPaquet = (type_paquet) & 0b111
+        _numPaquet = ((type_paquet >> 5) & 0b111)
+        _dernierPaquet = ((type_paquet >> 4) & 0b1)
+        _numProchainPaquet = ((type_paquet) & 0b111)
         donnee = pack_data[2:2 + longeur_donnee]
         return (_numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee)
 
+    '''
+
+    '''
     def pack_n_connect(_numCon, _typePaquet, _AddrSrc, _AddrDest) :
         return struct.pack(FP.Format_paquet.N_CONNECT, _numCon, _typePaquet,
             _AddrSrc, _AddrDest)
-
+    '''
+    
+    '''
     def unpack_n_connect(data) :
         return struct.unpack(FP.Format_paquet.N_CONNECT, data)
-
+    '''
+    
+    '''
     def pack_n_disconnect_ind(_numCon, _typePaquet, _AddrSrc, _AddrDest, _Raison) :
         return struct.pack(FP.Format_paquet.N_DISCONNECT_IND, _numCon, _typePaquet,
             _AddrSrc, _AddrDest, _Raison)
+    '''
     
+    '''
     def unpack_n_disconnect_ind(data) :
         return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND, data)
-
+    '''
+    
+    '''
     def pack_n_akn_pos(_numcon, _numProchainPaquet) :
         numCon = struct.pack(FP.Format_paquet.NUMERO_CON.value, _numcon)
-        dernierByte = (_numProchainPaquet >> 5) & 0b111 | 0 | 0 | 0 | 0 | 1
+        dernierByte = ((_numProchainPaquet >> 5) & 0b111) << 5 | 0b00001
         return numCon + dernierByte
     
+    '''
+    
+    '''
     def unpack_n_akn_pos(pack_data) :
         _numCon = pack_data[0]
         _dernierByte = pack_data[1]
         return (_numCon, _dernierByte)
-
+    '''
+    
+    '''
     def pack_n_akn_neg(_numcon, _numProchainPaquet) :
         numCon = struct.pack(FP.Format_paquet.NUMERO_CON.value, _numcon)
-        dernierByte = (_numProchainPaquet >> 5) & 0b111 | 0 | 1 | 0 | 0 | 1
+        dernierByte = ((_numProchainPaquet >> 5) & 0b111) << 5 |0b01001
         return numCon + dernierByte
-
+    '''
+    
+    '''
     def unpack_n_akn_neg(pack_data) :
         _numCon = pack_data[0]
         _dernierByte = pack_data[1]
