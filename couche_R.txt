@@ -1,0 +1,5 @@
+Classe Er :
+
+Hérite de threading.Thread pour gérer un thread qui lit et traite des paquets de la file fileEr.
+lire_ER : Lit des paquets, traite différents types de paquets (N_CONNECT, N_DISCONNECT_IND), et envoie des acquittements via envoyer_ET.
+envoyer_ET : Met des paquets dans la file fileEt.
