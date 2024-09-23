@@ -46,11 +46,22 @@ class service_manipulation_donnees() :
     def unpack_n_disconnect_ind(data) :
         return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND, data)
 
-#   def pack_n_akn_pos() :
-#       pass
-#   def unpack_n_akn_pos() :
-#       pass
-#   def pack_n_akn_neg() :
-#       pass
-#   def unpack_n_akn_neg() :
-#       pass
+    def pack_n_akn_pos(_numcon, _numProchainPaquet) :
+        numCon = struct.pack(FP.Format_paquet.NUMERO_CON.value, _numcon)
+        dernierByte = (_numProchainPaquet >> 5) & 0b111 | 0 | 0 | 0 | 0 | 1
+        return numCon + dernierByte
+    
+    def unpack_n_akn_pos(pack_data) :
+        _numCon = pack_data[0]
+        _dernierByte = pack_data[1]
+        return (_numCon, _dernierByte)
+
+    def pack_n_akn_neg(_numcon, _numProchainPaquet) :
+        numCon = struct.pack(FP.Format_paquet.NUMERO_CON.value, _numcon)
+        dernierByte = (_numProchainPaquet >> 5) & 0b111 | 0 | 1 | 0 | 0 | 1
+        return numCon + dernierByte
+
+    def unpack_n_akn_neg(pack_data) :
+        _numCon = pack_data[0]
+        _dernierByte = pack_data[1]
+        return (_numCon, _dernierByte)

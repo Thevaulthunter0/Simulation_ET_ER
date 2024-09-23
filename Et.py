@@ -21,8 +21,9 @@ class Et(threading.Thread) :
     ## Thread enfant con
     def run_thread_con(self, identifiant) :
         thread_local.identifiant = identifiant
-        #Continuellement lire sur la fileEt et regarder si les donnes lui sont addresse avec identifiant_thread et numero de con
-        #Dependament des donnees recu effectuer quelque chose.
+        # Continuellement lire sur la fileEt et regarder si les donnes lui sont addresse avec identifiant_thread et numero de con
+        # Dependament des donnees recu effectuer quelque chose.
+        # 
         self.lire_Et(thread_local.identifiant)
         while True :
             pass
