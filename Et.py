@@ -112,4 +112,13 @@ class Et(threading.Thread) :
         # Écriture dans le fichier
         with open(file_path, 'w') as file:
             json.dump(dataInFile, file, indent=4)
+    '''
+     Définition: Permettre d'écrire dans le fichier de données
+    '''
+    def write_in_response_file(input_string):
+        # créer le format de donnée à écrire
+        data = {'réponse' : input_string}
+        # écrire les données dans le fichier de réponse
+        with open('reponse.txt', 'w') as file:
+            json.dump(data, file, indent=4)
 
