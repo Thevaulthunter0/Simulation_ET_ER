@@ -99,7 +99,7 @@ class Et(threading.Thread) :
     '''
     Définition: Permettre d'écrire dans le fichier de données
     '''
-    def write_to_data_fil(data, file_path='donnees.json'):   
+    def write_in_data_file(data, file_path='donnees.json'):   
         try:
             #tentative de lecture
             with open(file_path, 'r') as file:
