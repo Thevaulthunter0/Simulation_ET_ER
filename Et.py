@@ -1,3 +1,4 @@
+import json
 import queue as file
 import threading 
 import struct
@@ -79,4 +80,28 @@ class Et(threading.Thread) :
     def peek_Et(self) :
         with self.fileEt.mutex :   #Mutex because looking at the data in the queue isnt thread safe
             return self.fileEt.queue[0]
+        
+
+    '''
+    Définition: Permettre de lire le fichier de données
+    '''
+     
+    '''
+    Définition: Permettre d'écrire dans le fichier de données
+    '''
+    def write_to_data_fil(data, file_path='donnees.json'):   
+        try:
+            #tentative de lecture
+            with open(file_path, 'r') as file:
+                dataInFile = json.load(file)
+        except FileNotFoundError:
+            # dans le cas que le fichier n'existe pas
+            dataInFile = []
+
+        # Ajout des données à écrire 
+        dataInFile.append(data)
+
+        # Écriture dans le fichier
+        with open(file_path, 'w') as file:
+            json.dump(dataInFile, file, indent=4)
 
