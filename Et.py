@@ -1,40 +1,57 @@
 import queue as file
 import threading 
-import struct as struc
+import struct
+import random
 
 # Permet de donner une variable local seulement aux sous-threads.
 # Elle sera utilise pour assigner un numero de connection aux sous-threads.
 thread_local = threading.local()
 class Et(threading.Thread) :
-    def __init__(self, fileEr, fileEt):
+    def __init__(self, fileEr, fileEt, addSrc):
         super().__init__()
         self.fileEt = fileEt
         self.fileEr = fileEr
+        self.addSrc = addSrc
 
-    ## Thread principal Et
+    '''
+    Définition : Fonction que le thread principal utilise
+    Input : 
+    Output :
+    '''
     def run(self):
         # Regarder dans le fichier de donnee
         # Si les data ne sont pas assigne a un numero de connexion dans le tableau creer une nouvelle entree et un thread de con
         while True :
             pass
 
-    ## Thread enfant con
+    '''
+    Définition : Fonction que le thread enfant connexion utilise
+    Input : int identifiant de thread
+    Output :
+    '''
     def run_thread_con(self, identifiant) :
         thread_local.identifiant = identifiant
         # Continuellement lire sur la fileEt et regarder si les donnes lui sont addresse avec identifiant_thread et numero de con
         # Dependament des donnees recu effectuer quelque chose.
-        # 
         self.lire_Et(thread_local.identifiant)
         while True :
             pass
 
-    ## Pour creer un nouveau thread
+    '''
+    Définition : Créer un nouveau thread de connexion
+    Input : int identifiant de thread
+    Output : NA
+    '''
     def start_thread_con(self, identifiant_thread) :
-        identifiant = identifiant_thread
-        thread_con = threading.Thread(target=self.run_thread_con, args=(identifiant,))
+        thread_con = threading.Thread(target=self.run_thread_con, args=(identifiant_thread,))
         thread_con.start()
 
-    ## permettre de lire les paquets mis dans la file Et
+    
+    '''
+    Définition : permettre de défiler première intance de la fileEt 
+    Input : int identifiant du thread
+    Output : à déterminer 
+    '''
     def lire_Et(self, identifiant_thread) :
         if self.fileEt.empty() == True :
             pass
@@ -46,11 +63,19 @@ class Et(threading.Thread) :
             else :
                 return self.fileEt.get()
 
-    ## permettre d'allez mettre un paquet dans la file Er
+    '''
+    Définition : Permettre d'allez mettre un paquet dans la file Er 
+    Input : à déterminer
+    Output : à déterminer
+    '''
     def ecrire_Er(self) :
         pass
 
-    ## Permettre de regarger(peek) le premier objet dans la file sans la defiler
+    '''
+    Définition: Permettre de regarger(peek) le premier objet dans la file sans la defiler
+    Input : NA
+    Output : Première instance de la file 
+    '''
     def peek_Et(self) :
         with self.fileEt.mutex :   #Mutex because looking at the data in the queue isnt thread safe
             return self.fileEt.queue[0]
