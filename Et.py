@@ -85,7 +85,17 @@ class Et(threading.Thread) :
     '''
     Définition: Permettre de lire le fichier de données
     '''
-     
+    def read_data_file():
+        try: 
+            with open('donnees.json', 'r') as file:
+                data = json.load(file)
+                return data
+        except FileNotFoundError:
+            print('File not found.')
+            return None
+        except json.JSONDecodeError:
+            print("Error decoding JSON.")
+            return None
     '''
     Définition: Permettre d'écrire dans le fichier de données
     '''
@@ -97,10 +107,8 @@ class Et(threading.Thread) :
         except FileNotFoundError:
             # dans le cas que le fichier n'existe pas
             dataInFile = []
-
         # Ajout des données à écrire 
         dataInFile.append(data)
-
         # Écriture dans le fichier
         with open(file_path, 'w') as file:
             json.dump(dataInFile, file, indent=4)
