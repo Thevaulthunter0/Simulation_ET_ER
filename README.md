@@ -50,11 +50,11 @@ unpack donne un tuple : (10,4,9)
         - "Er" envoie libération à "Et" (N_DISCONNECT.ind)
         - "Et" libère les ressource et écrit dans S_ecr
         - fin
-        
+
 5 -  "Et" si réception N_CONNECT.conf
     - Modifier état de la connexion
 
-6 - "Et" envoie N_DATA.req à "Er"
+6 - "Et" envoie les donnees(PAS N_DATA_REQ) à "Er"
 
 7 - "Er" construit le paquet de donnée
     - Segmentation si donnée > 128 bytes
