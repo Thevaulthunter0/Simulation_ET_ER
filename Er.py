@@ -5,6 +5,8 @@ import time
 import queue  # Make sure to import queue
 import logging
 
+import os
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -84,8 +86,88 @@ class Er(threading.Thread):
         self.running = False
 
 
+    def receiving_data_from_ET(self):
+        try:
+            _numCon, donnee = "00001010", "11111111111111111"
+
+            if _numCon:  # vérifier si _numCon est dans la table lorsque la table aura ete implementer
+                logging.info(f"N_DATA.REQ reçu: NumCon={_numCon}, Donnee={donnee}")
+                paquets_segmenter = []
+
+                if len(donnee) > 1024:
+                    logging.warning(f"Les donnees sont trop longues pour envoyer: NumCon={_numCon}, Donnee={donnee}")
+
+                elif len(donnee) > 128:
+                    paquets = service_manipulation_donnees.donnee_segmentation(donnee)
+                    number_of_paquets = len(paquets)
+
+                    for i, paquet in enumerate(paquets):
+                        m = service_manipulation_donnees.decimal_to_binary((1 if i < number_of_paquets-1 else 0), 3)
+                        p_s = service_manipulation_donnees.decimal_to_binary(i, 1)
+                        p_r = service_manipulation_donnees.decimal_to_binary((i + 1 if i < number_of_paquets-1 else i), 3)
+
+                        paquets_segmenter.append([p_r, m, p_s, paquet])
+
+                elif not donnee:
+                    logging.warning(f"N_DATA.REQ reçu: NumCon={_numCon}, Data is empty, Donnee={donnee}")
+
+                else:
+                    paquets_segmenter.append(
+                        [
+                         service_manipulation_donnees.decimal_to_binary(1, 3), # p_r
+                         service_manipulation_donnees.decimal_to_binary(0, 1), # m
+                         service_manipulation_donnees.decimal_to_binary(1, 3), # p_s
+                         donnee
+                         ])
+
+                for paquet in paquets_segmenter:
+                    p_r, m, p_s, donnee = paquets_segmenter[paquet]
+
+                    ack_received = False
+                    retry_count = 0
+
+                    while not ack_received and retry_count < 2:  # Une tentative initiale + une réémission
+                        service_manipulation_donnees.pack_n_data_req(_numCon=_numCon, _numProchainPaquet=p_r, _dernierPaquet=m, _numPaquet=p_s, donnee=donnee)
+
+                        # Fonction pour envoyer a la couche liaison le paquet parametre = (paquet, addr_source)
+                        time.sleep(5)
+
+                        # ack_received = reponse de la fonction pour recevoir la reponse de la couche liaison
+
+                        if ack_received:
+                            logging.info(f"ack_status: Recu retry_count: {retry_count}")
+                            break
+
+                        if not ack_received:
+                            if retry_count == 0:
+                                logging.warning(f"Réémission du paquet")
+                                retry_count += 1
+                            else:
+                                logging.error(
+                                    f"Échec de l'émission du paquet après une tentative de réémission")
+                                break
+
+            else:
+                logging.warning(f"NumCon non trouvé: {_numCon}")
+
+        except Exception as e:
+            logging.error(f"Une erreur inattendue s'est produite: {e}")
+
+        return "Data"
+
+
 class service_manipulation_donnees:
     # Gestion du packing et unpacking des paquets.
+
+    '''
+    Because N_DATA_REQ is a complexe structure(a struct insine of a struct)
+    We need to create it by combining multiples structure.
+    _numCon need to be a 8 bits integer
+    _numPaquet need to be 3 bits integer
+    _dernierPaquet need to be 1 bit integer
+    _numProchainPaquet need to be 3 bits integer
+    data need to be smaller or equal to 128 Bytes and of type bytes
+    '''
     @staticmethod
     def pack_n_data_req(_numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee):
         # Créer la structure Numero CON
@@ -140,9 +222,76 @@ class service_manipulation_donnees:
         # Define the format as needed
         return struct.pack('!BB', _numCon, 25)  # Example values
 
+    @staticmethod
+    def donnee_segmentation(donnees):
+        paquets = []
+        for i in range(0, len(donnees), 128):
+            paquet = donnees[i:i+128]
+            paquets.append(paquet)
+        return paquets
+
+    @staticmethod
+    def decimal_to_binary(decimal_num, num_bits):
+        # Convertir en binaire et enlever le préfixe '0b'
+        binary = bin(decimal_num)[2:]
+
+        # Ajouter des zéros au début pour atteindre le nombre de bits souhaité
+        return binary.zfill(num_bits)
+
+    @staticmethod
+    def pack_n_data_req2(_numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee):
+        # Créer la structure Numero CON
+        numCon = struct.pack(Format_paquet.NUMERO_CON.value, _numCon)
+        # Créer la structure TYPE_PAQUET
+        type_paquet = (_numPaquet << 5) | (_dernierPaquet << 4) | (_numProchainPaquet << 1)
+        type_paquet_pack = struct.pack(Format_paquet.TYPE_PAQUET.value, type_paquet)
+        return numCon + type_paquet_pack + donnee
+
+    @staticmethod
+    def unpack_n_data_req2(pack_data):
+            _numCon = pack_data[0]
+            type_paquet = pack_data[1]
+            _numPaquet = (type_paquet >> 5) & 0b111
+            _dernierPaquet = (type_paquet >> 4) & 0b1
+            _numProchainPaquet = (type_paquet) & 0b111
+            donnee = pack_data[2:]
+            return _numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee
+
+    @staticmethod
+    def pack_acq_positif(_numCon, _numProchainAttendu):
+        second_byte = (_numProchainAttendu << 5) | 0b00001
+        return struct.pack('!BB', _numCon, second_byte)
+
+    @staticmethod
+    def unpack_acq_positif():
+        pass
+
+    @staticmethod
+    def pack_acq_negatif(_numCon, _numProchainAttendu):
+        second_byte = (_numProchainAttendu << 5) | 0b01001
+        return struct.pack('!BB', _numCon, second_byte)
+
+    @staticmethod
+    def unpack_acq_negatif():
+        pass
+
 
 # Exemple d'utilisation
 if __name__ == "__main__":
+
+    fichiers_names = ["L_ecr", "L_lec", "s_ecr", "S_lec"]
+    directory = "fichiers"
+
+    # Verifiez si le repertoire existe, sinon on le creer
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    for i in fichiers_names:
+        fichier_name = os.path.join(directory, f"fichier_{i}.txt")
+
+        with open(fichier_name, "w") as fichier:
+            fichier.write(f"Titre du fichier: {i}")
+
     # Création des files de messages
     fileEt = queue.Queue()
     fileEr = queue.Queue()
