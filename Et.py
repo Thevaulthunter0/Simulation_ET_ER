@@ -13,8 +13,8 @@ class Et(threading.Thread) :
         self.fileEt = fileEt
         self.fileEr = fileEr
         self.addSrc = addSrc
-        self.tableauThread = {} #Clé = thread_id    valeur = File du thread
-        self.tableauConnexion = {}  #Clé = num. de connexion     valeur = tuple(id_app, adresse destination, thread_id, "Attente de confirmation" ou "connexion établie")
+        self.tableauThread = {} #Clé = numCon    valeur = File du thread
+        self.tableauConnexion = {}  #Clé = Tuple(id_app, adresse destination)     valeur = tuple(numCon, "Attente de confirmation" ou "connexion établie")
 
     '''
     Définition : Fonction que le thread principal utilise
@@ -25,8 +25,9 @@ class Et(threading.Thread) :
         #------------ Boucle ----------------------------------------------------------
         # 1. Regarder dans le fichier de donnee
         # 2. Si les data ne sont pas assigne a un numero de connexion dans le tableau
-        #   2.1 Creer un thread de con avec start_thread_con(_numCon)
-        #       2.1.1 voir run_thread_con()
+        #   2.1 Ajouter valeur à TableauConnexion
+        #   2.2 Creer un thread de con avec start_thread_con(_numCon)
+        #       2.2.1 voir run_thread_con()
         # 3. Si les data sont deja assignée à une connexion envoyer
         #   3.1 Envoyer au bon thread grâce au tableau de thread
         #------------------------------------------------------------------------------
@@ -41,9 +42,8 @@ class Et(threading.Thread) :
     def run_thread_con(self, threadNumCon) :
         thread_local.threadNumCon = threadNumCon
         #-------- Lors de la création --------------------
-        # 2.1.1 Creer sa fileT (file thread)
-        # 2.1.2 Creer une entrée dans tableau connexion
-        # 2.1.3 Creer une entrée dans tableau thread
+        # 2.2.1 Creer sa fileT (file thread)
+        # 2.2.2 Creer une entrée dans tableau thread avecthreadNumCon comme clé et sa file en valeur
         #-------------------------------------------------
         #---------- Boucle -------------------------------------------------------------------------------------------------------
         # 3. lire sur la fileEt et regarder si les donnes lui sont addresse avec threadNumCon et numCon des paquets
