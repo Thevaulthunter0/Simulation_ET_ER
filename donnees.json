@@ -1,0 +1,17 @@
+[
+    {
+        "id_app": "001",
+        "id_dest": 45,
+        "donne": "Exemple de données 1"
+    },
+    {
+        "id_app": "002",
+        "id_dest": 134,
+        "donne": "Exemple de données 2"
+    },
+    {
+        "id_app": "003",
+        "id_dest": 200,
+        "donne": "Exemple de données 3"
+    }
+]
