@@ -367,7 +367,7 @@ if __name__ == "__main__":
     thread_sender = PacketSender(fileEt)
     thread_sender.start()
 
-    # Envoyer un example de N_CONNECT
+    # Envoyer un example de N_CONNECT dans la console
     packet_n_connect = {
         "type_paquet": 11,
         "data": service_manipulation_donnees.pack_n_connect(1, 1, 1, 2)
