@@ -7,6 +7,8 @@ import logging
 
 import os
 
+from Service_de_liaison import Service_de_liaison
+
 # Logging pour tests
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -20,6 +22,9 @@ class Format_paquet(Enum):
     # --- Refus de connexion et libération de connexion ---
     # --- Refus de connexion et libération de connexion ---
     N_DISCONNECT_IND = "!BBBBB"
+
+    # --- Paquet de demande de liberation ---
+    N_DISCONNECT_REQ = "!BBBB"
 
     # --- Paquet transfert de données ---
     NUMERO_CON = "!B"
@@ -54,16 +59,47 @@ class Er(threading.Thread):
                         addr_src,
                         addr_dest,
                     ) = service_manipulation_donnees.unpack_n_connect(data)
+
                     logging.info(
                         f"N_CONNECT reçu: NumCon={num_con}, TypePaquet={type_p}, "
                         f"AddrSrc={addr_src}, AddrDest={addr_dest}"
                     )
 
-                    ack_packet = {
-                        "type_paquet": 21,  # Suppose 21 represents ACK
-                        "data": service_manipulation_donnees.pack_n_ack(num_con),
-                    }
-                    self.envoyer_ET(ack_packet)
+                    if addr_src % 27:   # Refu si l’adresse de la station source est un multiple de 27
+                        # todo() Indiquation a ET la liberation
+                        service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _typePaquet=type_p,
+                                                                           _AddrSrc=addr_src, _AddrDest=addr_dest,
+                                                                           _Raison= '00000010')
+                        # Je crois que pas oblige de faire paquet seulement envoi primitive
+                        pass
+
+                    else:
+                        """
+                        Si le processus ER accepte, il attribue à la demande un numéro de connexion. Il
+                        construit ensuite le paquet d’appel. . Il mémorise les informations nécessaires relatives
+                        à cette connexion : numéro de connexion, adresse source, adresse destinataire, , état
+                        de la connexion (en cours d’établissement ou établie), identifiant d’extrémité de
+                        connexion réseau.
+                        
+                        # Il utilise le service de liaison pour acheminer le paquet d’appel
+                        # (écriture du paquet dans le fichier L-ecr).
+                        
+                        # Envoie demande vers couche de liaison 
+                        Service_de_liaison.demande_conn(addr_source=addr_src)
+                        
+                        # Recuperation de la demande
+                        
+                        #if demande=accepte:
+                            primitive N_CONNECT.conf
+                        # demande pas accepter:
+                            primitive N_DISCONNECT.ind 
+                        
+                        """
+                        ack_packet = {
+                            "type_paquet": 21,  # Suppose 21 represents ACK
+                            "data": service_manipulation_donnees.pack_n_ack(num_con),
+                        }
+                        self.envoyer_ET(ack_packet)
 
                 elif type_paquet == 15:  # N_DISCONNECT_IND
                     (
@@ -85,6 +121,12 @@ class Er(threading.Thread):
                         ),
                     }
                     self.envoyer_ET(disconnect_ack)
+
+                elif type_paquet == 10: # DATA.REQ
+                    numCon, donnee = "00001010", "11111111111111111"
+                    self.receiving_data_from_ET(_numCon =numCon, donnee=donnee)
+
+
                 self.fileEr.task_done()
         except queue.Empty:
             time.sleep(0.1)
@@ -106,10 +148,9 @@ class Er(threading.Thread):
     def stop(self):
         self.running = False
 
-    def receiving_data_from_ET(self):
-        try:
-            _numCon, donnee = "00001010", "11111111111111111"
 
+    def receiving_data_from_ET(self, _numCon, donnee):
+        try:
             if (
                 _numCon
             ):  # vérifier si _numCon est dans la table lorsque la table aura ete implementer
@@ -285,6 +326,20 @@ class service_manipulation_donnees:
         return struct.unpack(Format_paquet.N_DISCONNECT_IND.value, data)
 
     @staticmethod
+    def pack_n_disconnect_req(_numCon, _typePaquet, _AddrSrc, _AddrDest):
+        return struct.pack(
+            Format_paquet.N_DISCONNECT_REQ.value,
+            _numCon,
+            _typePaquet,
+            _AddrSrc,
+            _AddrDest,
+        )
+
+    @staticmethod
+    def unpack_n_disconnect_req(data):
+        return struct.unpack(Format_paquet.N_DISCONNECT_REQ.value, data)
+
+    @staticmethod
     def pack_n_ack(_numCon):
         # Example packing for acknowledgment
         # Define the format as needed
@@ -352,6 +407,18 @@ class service_manipulation_donnees:
     @staticmethod
     def unpack_acq_negatif():
         pass
+
+
+    # Paquet de communication etablie
+    @staticmethod
+    def pack_comm_etablie(_numCon, _AddrSrc, _AddrDest):
+        return struct.pack(
+            Format_paquet.N_CONNECT.value, _numCon, '00001111', _AddrSrc, _AddrDest
+        )
+
+    @staticmethod
+    def unpack_comm_etablie(data):
+        return struct.unpack(Format_paquet.N_CONNECT.value, data)
 
 
 # Exemple d'utilisation
