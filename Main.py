@@ -11,7 +11,7 @@ if __name__ == "__main__":
     fileEr = queue.Queue()
 
     et = Et.Et(fileEr, fileEt, addSrc)
-    er = Er.Er(fileEt, fileEr, addSrc)
+    er = Er.Er(fileEt, fileEr)
 
     et.start()
     er.start()
