@@ -17,7 +17,7 @@ class Et(threading.Thread) :
         self.addSrc = addSrc
         self.tableauThread = {} #Clé = numCon    valeur = File du thread
         self.tableauConnexion = {}  #Clé = Tuple(id_app, adresse destination)     valeur = tuple(numCon, "Attente de confirmation" ou "connexion établie")
-
+        self.compteurCon = 0  # Compteur pour numCon
     '''
     Définition : Fonction que le thread principal utilise
     Input : 
@@ -195,4 +195,13 @@ class Et(threading.Thread) :
         # écrire les données dans le fichier de réponse
         with open('reponse.txt', 'w') as file:
             json.dump(data, file, indent=4)
-
+    '''
+     Définition: Vérifie si la connexion existe, sinon il la crée
+    '''
+    def validation_creation_connexion(self, cle):
+        if cle not in self.tableauConnexion:
+            self.tableauConnexion[cle] = (self.compteurCon, "Attente de confirmation")
+            print("Nouvelle connexion pour {cle}")
+            self.compteurCon += 1  # Incrémente le compteur après avoir attribué un numéro
+        else:
+            print("Connexion déjà existante pour {cle}")
