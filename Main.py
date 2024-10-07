@@ -16,4 +16,7 @@ if __name__ == "__main__":
     et.start()
     er.start()
 
+    et.join()
+    er.join()
+    print("Main join")
 
