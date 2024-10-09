@@ -5,10 +5,6 @@ import time
 import queue
 import logging
 
-import os
-
-from Service_de_liaison import Service_de_liaison
-
 # Logging pour tests
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -40,6 +36,8 @@ class Er(threading.Thread):
         super().__init__()
         self.fileEr = fileER
         self.fileEt = fileET
+
+        self.tableauConnexion = {}  # Clé = Tuple(id_app, adresse destination)
         self.running = True  # Controlleur de thread
         self.lock = threading.Lock()  # Synchro des informations
 
@@ -51,6 +49,8 @@ class Er(threading.Thread):
                 # Traitement du paquet
                 type_paquet = paquet_brut.get("type_paquet")
                 data = paquet_brut.get("data")
+
+                logging.info(f"Raw data before unpacking: {data}")
 
                 if type_paquet == 11:  # N_CONNECT
                     (
@@ -65,12 +65,13 @@ class Er(threading.Thread):
                         f"AddrSrc={addr_src}, AddrDest={addr_dest}"
                     )
 
-                    if addr_src % 27:   # Refu si l’adresse de la station source est un multiple de 27
-                        # todo() Indiquation a ET la liberation
+                    if addr_src % 27 == 0:   # Refu si l’adresse de la station source est un multiple de 27
+                        print(addr_src)
                         service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _typePaquet=type_p,
                                                                            _AddrSrc=addr_src, _AddrDest=addr_dest,
                                                                            _Raison= '00000010')
                         # Je crois que pas oblige de faire paquet seulement envoi primitive
+
                         pass
 
                     else:
@@ -92,8 +93,7 @@ class Er(threading.Thread):
                         #if demande=accepte:
                             primitive N_CONNECT.conf
                         # demande pas accepter:
-                            primitive N_DISCONNECT.ind 
-                        
+                            primitive N_DISCONNECT.ind               
                         """
                         ack_packet = {
                             "type_paquet": 21,  # Suppose 21 represents ACK
@@ -101,7 +101,7 @@ class Er(threading.Thread):
                         }
                         self.envoyer_ET(ack_packet)
 
-                elif type_paquet == 15:  # N_DISCONNECT_IND
+                elif type_paquet == 15:  # N_DISCONNECT_REQ
                     (
                         num_con,
                         type_p,
@@ -122,7 +122,7 @@ class Er(threading.Thread):
                     }
                     self.envoyer_ET(disconnect_ack)
 
-                elif type_paquet == 10: # DATA.REQ
+                elif type_paquet == 0: # DATA.REQ
                     numCon, donnee = "00001010", "11111111111111111"
                     self.receiving_data_from_ET(_numCon =numCon, donnee=donnee)
 
@@ -132,6 +132,7 @@ class Er(threading.Thread):
             time.sleep(0.1)
         except Exception as e:
             logging.error(f"Error in lire_ER: {e}")
+
 
     # Ecrire vers Transport va permettre d'aller mettre un paquet dans la file Et
     def envoyer_ET(self, paquet):
@@ -312,14 +313,25 @@ class service_manipulation_donnees:
 
     @staticmethod
     def pack_n_disconnect_ind(_numCon, _typePaquet, _AddrSrc, _AddrDest, _Raison):
-        return struct.pack(
-            Format_paquet.N_DISCONNECT_IND.value,
-            _numCon,
-            _typePaquet,
-            _AddrSrc,
-            _AddrDest,
-            _Raison,
-        )
+        try:
+            # Ensure all arguments are integers
+            _numCon = int(_numCon)
+            _typePaquet = int(_typePaquet)
+            _AddrSrc = int(_AddrSrc)
+            _AddrDest = int(_AddrDest)
+            _Raison = int(_Raison)
+
+            return struct.pack(
+                Format_paquet.N_DISCONNECT_IND.value,
+                _numCon,
+                _typePaquet,
+                _AddrSrc,
+                _AddrDest,
+                _Raison,
+            )
+        except Exception as e:
+            logging.error(f"Error in pack_n_disconnect_ind: {e}")
+            raise
 
     @staticmethod
     def unpack_n_disconnect_ind(data):
@@ -437,7 +449,7 @@ if __name__ == "__main__":
     # Envoyer un example de N_CONNECT dans la console
     packet_n_connect = {
         "type_paquet": 11,
-        "data": service_manipulation_donnees.pack_n_connect(1, 1, 1, 2)
+        "data": service_manipulation_donnees.pack_n_connect(1, 11, 1, 2)
     }
     fileEr.put(packet_n_connect)
 
