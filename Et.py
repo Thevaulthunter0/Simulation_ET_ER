@@ -3,6 +3,7 @@ import queue as file
 import threading 
 import Service_manipulation_donnees as SMD
 import time
+import sys
 
 # Permet de donner une variable local seulement aux sous-threads.
 # Elle sera utilise pour assigner un numero de connection aux sous-threads.
@@ -61,7 +62,6 @@ class Et(threading.Thread) :
                         time.sleep(0.5)         #Laisser le temps au thread de creer ces entrees dans les tableaux
                         #Envoyer une demande de connexion au thread enfant
                         with self.lockFile :
-                            print(f"Put Con in {newNum}")
                             self.tableauFile[newNum].put("con")
                 #Demende de deconnexion d'un numero d'application et d'un numero de destination
                 case 'decon':
@@ -69,7 +69,6 @@ class Et(threading.Thread) :
                     if existingNum != None :
                         #Envoyer une demande de deconnexion au thread enfant
                         with self.lockFile :
-                            print(f"Put decon in {existingNum}")
                             self.tableauFile[existingNum].put("decon")
                 #Demande d'envoie de date a un numero d'application et d'un numero de destination
                 case _ :
@@ -77,7 +76,6 @@ class Et(threading.Thread) :
                     if existingNum != None :
                         #Envoyer des donnees au thread enfant
                         with self.lockFile :
-                            print(f"Put data in {existingNum}")
                             self.tableauFile[existingNum].put(data['data'])            
             #time.sleep(0.5)
 
@@ -121,7 +119,6 @@ class Et(threading.Thread) :
             #Lire sur sa propre file(FileT)    
             try : 
                 donneeT = fileT.get(timeout=1)
-                print(f"{threading.get_ident()} getFile : {donneeT}")
 
                 #Donnee de type demande de connexion
                 if donneeT == "con" and self.tableauConnexion[(id_app, addDest)][1] == "Attente de confirmation":
@@ -129,10 +126,12 @@ class Et(threading.Thread) :
                     #Creer un paquet de type n_connect
                     struct_n_connect_req = SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,
                         11,self.addSrc,addDest)
-                    self.ecrire_Er(struct_n_connect_req)
+                    self.ecrire_Er(11,struct_n_connect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET))---------------------------------------------------------------------------------------------------------------------------
-                    self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon ,"connexion établie")
-                    #-----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
+                    donnee = {"type_paquet" : 11, "data" : SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest)}
+                    self.fileEt.put(donnee)
+                    #self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon ,"connexion établie")
+                    # -----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
 
                 #Donnee de type demande de déconnexion 
                 elif donneeT == "decon" and self.tableauConnexion[(id_app, addDest)][1] == "connexion établie":
@@ -140,36 +139,48 @@ class Et(threading.Thread) :
                     #Creer un paquet de type n_disconnect
                     struct_n_disconnect_ind = SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,
                         0,self.addSrc,addDest,1)
-                    self.ecrire_Er(struct_n_disconnect_ind)
+                    self.ecrire_Er(10,struct_n_disconnect_ind)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET)---------------------------------------------------------------------------------------------------------------------------
-                    running = False
+                    donnee = {"type_paquet" : 15, "data" : SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,0,self.addSrc,addDest,1)}
+                    self.fileEt.put(donnee)
+                    #running = False
                     #-----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
 
                 #Les donnee a transferer a ER
                 elif self.tableauConnexion[(id_app, addDest)][1] == "connexion établie" :
                     print(f"{threading.get_ident()} : DATA")  
-                    self.ecrire_Er(donneeT)
+                    self.ecrire_Er(0,donneeT)
 
             except file.Empty :
                 continue
 
             #Lire sur la fileET
-            try : 
+            try :  
+                
                 donneeEt = self.lire_Et(thread_local.threadNumCon)
-                #Reçoit N_CONNECT_CONF
-                if donneeEt is not None:
-                    if len(donneeEt) == 32 :
-                        #Modifier l'état dans le tableauDeCon
-                        #Écrire dans fichier réponse
-                        pass
-                    #Reçoit N_DISCONNECT_IND
-                    elif len(donneeEt) == 40 :
-                        #Libérer ressource du thread, tableaux...
-                        #Écrire dans fichier réponse
-                        running = False
-                        pass
+                if donneeEt != None :
+                    type = donneeEt[0]
+                    #Reçoit N_CONNECT_CONF
+                    if donneeEt != None:
+                        if type == 11 :
+                            print("- Section lire fileEt lecture de connexion sur fileEt -")
+                            #Modifier l'état dans le tableauDeCon
+                            #Écrire dans fichier réponse
+                            self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon, "connexion établie")
+                            self.write_in_response_file("Connexion établie pour " + str(thread_local.threadNumCon))
+                            
+                        #Reçoit N_DISCONNECT_IND
+                        elif type == 15 :
+                            print("- Section lire fileEt lecture de deconnexion sur fileEt-")
+                            #Libérer ressource du thread, tableaux...
+                            #Écrire dans fichier réponse
+                            running = False
+                            del self.tableauFile[thread_local.threadNumCon]
+                            del self.tableauConnexion[(id_app, addDest)]
+                            self.write_in_response_file("Déconnexion confirmer pour " + str(thread_local.threadNumCon))
 
             except file.Empty :
+                print("- Section lire fileEt empty")
                 continue
 
     '''
@@ -189,26 +200,48 @@ class Et(threading.Thread) :
     '''
     Définition : permettre de défiler première intance de la fileEt 
     Input : int identifiant du thread
-    Output : data
+    Output : donnee unpack | None
     '''
+                # 11 : N_CONNECT
+                # 15 : N_DISCONNECT_IND
+                # 10 : N_DISCONNECT_REQ 
+                # 21 : N_AKN_POS
+
     def lire_Et(self, identifiant_thread) :
         if self.fileEt.empty() == True :
             pass
         else :
-            donnee = self.peek_Et()
-            numCon = int(donnee[0])
-            if numCon != identifiant_thread :
+            pack_donnee = self.peek_Et()
+            type = pack_donnee.get("type_paquet")
+            match type :
+                case 11:
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_connect(pack_donnee.get("data"))
+
+                case 15:
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee.get("data"))
+
+                case 10:
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee.get("data"))
+                
+                case 21:
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee.get("data"))
+
+                case __ :
+                    return None         
+            if unpack_donnee[0] != identifiant_thread :
                 return None
             else :
-                return self.fileEt.get(timeout = 1)
+                pop = self.fileEt.get(timeout=1)
+                return (type, unpack_donnee)
 
     '''
     Définition : Permettre d'allez mettre un paquet dans la file Er 
     Input : raw_data
     Output : NA
     '''
-    def ecrire_Er(self, raw_data) :
-        self.fileEr.put(raw_data)
+    def ecrire_Er(self, type_paquet ,raw_data) :
+        donnee = {"type_paquet" : type_paquet, "data" : raw_data}
+        self.fileEr.put(donnee)
 
     '''
     Définition: Permettre de regarger(peek) le premier objet dans la file sans la defiler
@@ -227,7 +260,7 @@ class Et(threading.Thread) :
     '''
     def read_data_file(self):
         try: 
-            with open('donnees.json', 'r') as file:
+            with open('S_lec.json', 'r') as file:
                 data = json.load(file)
                 return data
         except FileNotFoundError:
@@ -245,7 +278,7 @@ class Et(threading.Thread) :
         # créer le format de donnée à écrire
         data = {'réponse' : input_string}
         # écrire les données dans le fichier de réponse
-        with open('reponse.txt', 'w') as file:
+        with open('S_ecr.txt', 'w') as file:
             json.dump(data, file, indent=4)
     '''
     Définition: Vérifie si la connexion existe, sinon il la crée
