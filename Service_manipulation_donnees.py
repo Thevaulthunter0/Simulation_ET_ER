@@ -13,7 +13,7 @@ class service_manipulation_donnees() :
         bytes to be unpack
     '''
     def pack_n_connect(_numCon, _typePaquet, _AddrSrc, _AddrDest) :
-        return struct.pack(FP.Format_paquet.N_CONNECT, _numCon, _typePaquet,
+        return struct.pack(FP.Format_paquet.N_CONNECT.value, _numCon, _typePaquet,
             _AddrSrc, _AddrDest)
     '''
     Définition : Unpack une primitive de type N_CONNECT
@@ -23,7 +23,7 @@ class service_manipulation_donnees() :
         tuple (_numCon, _typePaquet, _AddrSrc, _AddrDest)
     '''
     def unpack_n_connect(pack_data) :
-        return struct.unpack(FP.Format_paquet.N_CONNECT, pack_data)
+        return struct.unpack(FP.Format_paquet.N_CONNECT.value, pack_data)
     '''
     Définition : pack une primitive de type N_DISCONNECT_IND
     Input :
@@ -36,7 +36,7 @@ class service_manipulation_donnees() :
         bytes to be unpack
     '''
     def pack_n_disconnect_ind(_numCon, _typePaquet, _AddrSrc, _AddrDest, _Raison) :
-        return struct.pack(FP.Format_paquet.N_DISCONNECT_IND, _numCon, _typePaquet,
+        return struct.pack(FP.Format_paquet.N_DISCONNECT_IND.value, _numCon, _typePaquet,
             _AddrSrc, _AddrDest, _Raison)
     '''
     Définition : Unpack une primitive de type N_DISCONNECT_IND
@@ -46,7 +46,7 @@ class service_manipulation_donnees() :
         tuple (_numCon, _typePaquet, _AddrSrc, _AddrDest, _Raison)
     '''
     def unpack_n_disconnect_ind(pack_data) :
-        return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND, pack_data)
+        return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND.value, pack_data)
     '''
     Définition : pack une primitive de type N_AKN_POS
     Input : 

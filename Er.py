@@ -19,5 +19,6 @@ class Er(threading.Thread):
 
     ## Thread principal d'Er
     def run(self):
-        while True :
+        running = False
+        while running :
             pass
