@@ -1,9 +1,12 @@
 import threading
 import struct
+import traceback
 from enum import Enum
 import time
 import queue
 import logging
+
+from Service_de_liaison import Service_de_liaison
 
 # Logging pour tests
 logging.basicConfig(
@@ -43,63 +46,24 @@ class Er(threading.Thread):
 
     # Lire de transport va permettre de lire les paquets mis dans la file Er
     def lire_ER(self):
+        from Service_de_liaison import Service_de_liaison
+
         try:
             while self.running:
                 paquet_brut = self.fileEr.get(timeout=1)  # Attend paquet
                 # Traitement du paquet
                 type_paquet = paquet_brut.get("type_paquet")
+                logging.info(
+                    f"TypePaquet={type_paquet}"
+                )
                 data = paquet_brut.get("data")
 
                 logging.info(f"Raw data before unpacking: {data}")
 
                 if type_paquet == 11:  # N_CONNECT
-                    (
-                        num_con,
-                        type_p,
-                        addr_src,
-                        addr_dest,
-                    ) = service_manipulation_donnees.unpack_n_connect(data)
-
-                    logging.info(
-                        f"N_CONNECT reçu: NumCon={num_con}, TypePaquet={type_p}, "
-                        f"AddrSrc={addr_src}, AddrDest={addr_dest}"
-                    )
-
-                    if addr_src % 27 == 0:   # Refu si l’adresse de la station source est un multiple de 27
-                        print(addr_src)
-                        service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _typePaquet=type_p,
-                                                                           _AddrSrc=addr_src, _AddrDest=addr_dest,
-                                                                           _Raison= '00000010')
-                        # Je crois que pas oblige de faire paquet seulement envoi primitive
-
-                        pass
-
-                    else:
-                        """
-                        Si le processus ER accepte, il attribue à la demande un numéro de connexion. Il
-                        construit ensuite le paquet d’appel. . Il mémorise les informations nécessaires relatives
-                        à cette connexion : numéro de connexion, adresse source, adresse destinataire, , état
-                        de la connexion (en cours d’établissement ou établie), identifiant d’extrémité de
-                        connexion réseau.
-                        
-                        # Il utilise le service de liaison pour acheminer le paquet d’appel
-                        # (écriture du paquet dans le fichier L-ecr).
-                        
-                        # Envoie demande vers couche de liaison 
-                        Service_de_liaison.demande_conn(addr_source=addr_src)
-                        
-                        # Recuperation de la demande
-                        
-                        #if demande=accepte:
-                            primitive N_CONNECT.conf
-                        # demande pas accepter:
-                            primitive N_DISCONNECT.ind               
-                        """
-                        ack_packet = {
-                            "type_paquet": 21,  # Suppose 21 represents ACK
-                            "data": service_manipulation_donnees.pack_n_ack(num_con),
-                        }
-                        self.envoyer_ET(ack_packet)
+                    logging.info(f"Demande de connexion commence: {type_paquet}: {data}")
+                    paquet = self.demande_connexion(donnee=data)
+                    return self.envoyer_ET(paquet)
 
                 elif type_paquet == 15:  # N_DISCONNECT_REQ
                     (
@@ -122,16 +86,17 @@ class Er(threading.Thread):
                     }
                     self.envoyer_ET(disconnect_ack)
 
+
                 elif type_paquet == 0: # DATA.REQ
                     numCon, donnee = "00001010", "11111111111111111"
-                    self.receiving_data_from_ET(_numCon =numCon, donnee=donnee)
-
+                    self.transfert_de_donnees(_numCon =numCon, donnee=donnee)
 
                 self.fileEr.task_done()
+
         except queue.Empty:
             time.sleep(0.1)
         except Exception as e:
-            logging.error(f"Error in lire_ER: {e}")
+            logging.error(f"Error in lire_ER: {e}, Line: {traceback.format_exc()}")
 
 
     # Ecrire vers Transport va permettre d'aller mettre un paquet dans la file Et
@@ -150,24 +115,90 @@ class Er(threading.Thread):
         self.running = False
 
 
-    def receiving_data_from_ET(self, _numCon, donnee):
+    def demande_connexion(self, donnee):
+        # Crée une instance de la classe Service_de_liaison
+        service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
+        (
+            num_con,
+            type_p,
+            addr_src,
+            addr_dest,
+        ) = service_manipulation_donnees.unpack_n_connect(donnee)
+
+        logging.info(
+            f"N_CONNECT reçu: NumCon={num_con}, TypePaquet={type_p}, "
+            f"AddrSrc={addr_src}, AddrDest={addr_dest}"
+        )
+
+        if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
+            result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con,
+                                                               _AddrSrc=addr_src, _AddrDest=addr_dest,
+                                                               _Raison='00000010')
+
+        else:
+
+            #Todo(): Si le processus ER accepte, il attribue à la demande un numéro de connexion. Il
+            # construit ensuite le paquet d’appel. . Il mémorise les informations nécessaires relatives
+            # à cette connexion : numéro de connexion, adresse source, adresse destinataire, , état de la
+            # connexion (en cours d’établissement ou établie), identifiant d’extrémité de connexion réseau.
+
+            paquet_appel = service_manipulation_donnees.pack_paquet_d_appel(_numCon=num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
+
+            # Envoie demande vers couche de liaison
+            reponse = service_liaison.demande_conn(data=paquet_appel)
+
+            if reponse:
+                packet_type = reponse[1]
+
+                if packet_type == '00001111':
+                    num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
+                    result = service_manipulation_donnees.pack_comm_etablie(_numCon=num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
+
+                elif packet_type == '00010011':
+                    num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(reponse)
+                    result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _AddrSrc=addr_src,
+                                                                            _AddrDest=addr_dest, _Raison=raison )
+
+            else:
+                num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(reponse)
+                result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _AddrSrc=addr_src,
+                                                                            _AddrDest=addr_dest, _Raison=raison)
+
+        return result # Todo(): Je return une primitive en un format de paquet
+
+
+
+    def transfert_de_donnees(self, _numCon, donnee):
+        # Crée une instance de la classe Service_de_liaison
+        service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
+
         try:
-            if (
-                _numCon
-            ):  # vérifier si _numCon est dans la table lorsque la table aura ete implementer
+            # Vérifie si _numCon est défini. Todo: vérifier si _numCon existe dans la table plus tard.
+            if _numCon:
                 logging.info(f"N_DATA.REQ reçu: NumCon={_numCon}, Donnee={donnee}")
                 paquets_segmenter = []
 
-                if len(donnee) > 1024:
+                # Vérifie si la donnée est vide.
+                if not donnee:
+                    logging.warning(
+                        f"N_DATA.REQ reçu: NumCon={_numCon}, Data is empty, Donnee={donnee}"
+                    )
+
+                # Vérifie si la donnée est trop longue pour être envoyée.
+                elif len(donnee) > 1024:
                     logging.warning(
                         f"Les donnees sont trop longues pour envoyer: NumCon={_numCon}, Donnee={donnee}"
                     )
 
+                # Si la donnée dépasse 128 octets, elle doit être segmentée.
                 elif len(donnee) > 128:
+                    # Segmente la donnée en paquets.
                     paquets = service_manipulation_donnees.donnee_segmentation(donnee)
                     number_of_paquets = len(paquets)
 
+                    # Parcourt chaque segment et crée les champs nécessaires pour chaque paquet.
                     for i, paquet in enumerate(paquets):
+                        # Génère les bits de fin de paquet et de numéro de séquence.
                         m = service_manipulation_donnees.decimal_to_binary(
                             (1 if i < number_of_paquets - 1 else 0), 3
                         )
@@ -176,13 +207,10 @@ class Er(threading.Thread):
                             (i + 1 if i < number_of_paquets - 1 else i), 3
                         )
 
+                        # Ajoute le paquet segmenté à la liste.
                         paquets_segmenter.append([p_r, m, p_s, paquet])
 
-                elif not donnee:
-                    logging.warning(
-                        f"N_DATA.REQ reçu: NumCon={_numCon}, Data is empty, Donnee={donnee}"
-                    )
-
+                # Si la donnée est inférieure à 128 octets, elle est envoyée en un seul bloc.
                 else:
                     paquets_segmenter.append(
                         [
@@ -193,16 +221,20 @@ class Er(threading.Thread):
                         ]
                     )
 
+                # Boucle sur chaque paquet segmenté pour les envoyer.
                 for paquet in paquets_segmenter:
+                    # Récupère les valeurs du paquet segmenté.
                     p_r, m, p_s, donnee = paquets_segmenter[paquet]
+
+                    logging.info(f"p_r={p_r}, m={m}, p_s={p_s}")
 
                     ack_received = False
                     retry_count = 0
 
-                    while (
-                        not ack_received and retry_count < 2
-                    ):  # Une tentative initiale + une réémission
-                        service_manipulation_donnees.pack_n_data_req(
+                    # Essaye d'envoyer le paquet (maximum 2 tentatives : une initiale + une réémission).
+                    while not ack_received and retry_count < 2:
+                        # PACK les données.
+                        paquet_a_envoyer = service_manipulation_donnees.pack_n_data_req(
                             _numCon=_numCon,
                             _numProchainPaquet=p_r,
                             _dernierPaquet=m,
@@ -210,15 +242,23 @@ class Er(threading.Thread):
                             donnee=donnee,
                         )
 
-                        # Fonction pour envoyer a la couche liaison le paquet parametre = (paquet, addr_source)
-                        time.sleep(5)
+                        # Simule un délai de 3 secondes avant l'envoi.
+                        time.sleep(3)
 
-                        # ack_received = reponse de la fonction pour recevoir la reponse de la couche liaison
+                        # Envoie le paquet et reçoit l'accusé de réception.
+                        reponse = service_liaison.transfert_donnees(paquet=paquet_a_envoyer, addr_source='15')
+                        if reponse is not None:
+                            _ack_received, _numCon_received, _num_prochain_attendu = service_manipulation_donnees.unpack_acq_positif_or_negatif(
+                                reponse)
 
-                        if ack_received:
-                            logging.info(f"ack_status: Recu retry_count: {retry_count}")
-                            break
+                            logging.info(f"_ack_received={_ack_received}, _numCon={_numCon}, _num_prochain_attendu={_num_prochain_attendu}, p_r={p_r}")
 
+                            # Vérifie si l'accusé de réception est correct.
+                            if _ack_received and _numCon_received == _numCon and _num_prochain_attendu == p_r:
+                                logging.info(f"ack_status: Reçu, retry_count: {retry_count}")
+                                break
+
+                        # Si l'accusé n'est pas reçu, retente l'envoi ou échoue après deux tentatives.
                         if not ack_received:
                             if retry_count == 0:
                                 logging.warning(f"Réémission du paquet")
@@ -234,8 +274,6 @@ class Er(threading.Thread):
 
         except Exception as e:
             logging.error(f"Une erreur inattendue s'est produite: {e}")
-
-        return "Data"
 
 
 class PacketSender(threading.Thread):
@@ -312,15 +350,16 @@ class service_manipulation_donnees:
         return struct.unpack(Format_paquet.N_CONNECT.value, data)
 
     @staticmethod
-    def pack_n_disconnect_ind(_numCon, _typePaquet, _AddrSrc, _AddrDest, _Raison):
+    def pack_n_disconnect_ind(_numCon, _AddrSrc, _AddrDest, _Raison):
         try:
             # Ensure all arguments are integers
             _numCon = int(_numCon)
-            _typePaquet = int(_typePaquet)
             _AddrSrc = int(_AddrSrc)
             _AddrDest = int(_AddrDest)
             _Raison = int(_Raison)
 
+            _typePaquet = '00010011'
+            
             return struct.pack(
                 Format_paquet.N_DISCONNECT_IND.value,
                 _numCon,
@@ -408,17 +447,27 @@ class service_manipulation_donnees:
         return struct.pack("!BB", _numCon, second_byte)
 
     @staticmethod
-    def unpack_acq_positif():
-        pass
-
-    @staticmethod
     def pack_acq_negatif(_numCon, _numProchainAttendu):
         second_byte = (_numProchainAttendu << 5) | 0b01001
         return struct.pack("!BB", _numCon, second_byte)
 
     @staticmethod
-    def unpack_acq_negatif():
-        pass
+    def unpack_acq_positif_or_negatif(data):
+        _numCon, second_byte = struct.unpack("!BB", data)
+
+        # Extraire les 3 bits de gauche pour _numProchainAttendu
+        _numProchainAttendu = (second_byte >> 5) & 0b111
+
+        # Extraire les 5 derniers bits
+        last_5_bits = second_byte & 0b11111  # Masque pour garder les 5 bits de droite
+
+        # Vérifier si c'est un acquittement positif ou négatif
+        if last_5_bits == 0b00001:  # Acquittement positif
+            return True, _numCon, _numProchainAttendu
+        elif last_5_bits == 0b01001:  # Acquittement négatif
+            return False, _numCon, _numProchainAttendu
+        else:
+            raise ValueError("Données incorrectes : non reconnu comme acquittement positif ou négatif.")
 
 
     # Paquet de communication etablie
@@ -432,6 +481,26 @@ class service_manipulation_donnees:
     def unpack_comm_etablie(data):
         return struct.unpack(Format_paquet.N_CONNECT.value, data)
 
+    @staticmethod
+    def pack_paquet_d_appel(_numCon, _AddrSrc, _AddrDest):
+        return struct.pack(
+            Format_paquet.N_CONNECT.value, _numCon, '00001011', _AddrSrc, _AddrDest
+        )
+
+    @staticmethod
+    def unpack_paquet_d_appel(data):
+        return struct.unpack(Format_paquet.N_CONNECT.value, data)
+
+    @staticmethod
+    def unpack_packet_rep_comm(data):
+        packet_type = data[1]
+
+        if packet_type == '00001111':
+            return service_manipulation_donnees.unpack_comm_etablie(data)
+        elif packet_type == '00010011':
+            return service_manipulation_donnees.unpack_n_disconnect_ind(data)
+        else:
+            raise ValueError("Type de paquet inconnu")
 
 # Exemple d'utilisation
 if __name__ == "__main__":
