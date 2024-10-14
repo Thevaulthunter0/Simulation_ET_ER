@@ -3,7 +3,7 @@ import queue as file
 import threading 
 import Service_manipulation_donnees as SMD
 import time
-import sys
+import random
 
 # Permet de donner une variable local seulement aux sous-threads.
 # Elle sera utilise pour assigner un numero de connection aux sous-threads.
@@ -15,6 +15,7 @@ class Et(threading.Thread) :
         self.fileEt = fileEt
         self.fileEr = fileEr
         self.addSrc = addSrc
+        self.lockS_ecr = threading.Lock()
         self.lockFile = threading.Lock()
         self.tableauFile = {}   #Clé = numCon    valeur = File du thread
         self.lockThread = threading.Lock()
@@ -276,21 +277,25 @@ class Et(threading.Thread) :
     '''
     def write_in_response_file(self,input_string):
 
-         # Chemin du fichier
+        # Chemin du fichier
         filename = 'S_ecr.txt'
+        
+        with self.lockS_ecr :
+            # Lire les données existantes du fichier
+            try:
+                with open(filename, 'r', encoding='utf-8') as file:
+                    data = json.load(file)
+                    
+            except (FileNotFoundError, json.JSONDecodeError):
+                # Si le fichier n'existe pas ou est vide/corrompu, initialiser un nouveau dictionnaire
+                data = {}
+            # créer le format de donnée à écrire
+            key = str(int(random.randint(0,999)))
+            data[key] = (" " + input_string)
+            # écrire les données dans le fichier de réponse
+            with open(filename, 'w', encoding='utf-8') as file:
+                json.dump(data, file, ensure_ascii=False, indent=4)
 
-         # Lire les données existantes du fichier
-        try:
-            with open(filename, 'r') as file:
-                data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Si le fichier n'existe pas ou est vide/corrompu, initialiser un nouveau dictionnaire
-            data = {}
-        # créer le format de donnée à écrire
-        data += (" " + input_string)
-        # écrire les données dans le fichier de réponse
-        with open('S_ecr.txt', 'w', encoding='utf-8') as file:
-            json.dump(data, file, indent=4)
     '''
     Définition: Vérifie si la connexion existe, sinon il la crée
     Input : int id_app,
