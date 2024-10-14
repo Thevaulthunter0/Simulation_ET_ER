@@ -275,10 +275,21 @@ class Et(threading.Thread) :
     Outpu : NA
     '''
     def write_in_response_file(self,input_string):
+
+         # Chemin du fichier
+        filename = 'S_ecr.txt'
+
+         # Lire les données existantes du fichier
+        try:
+            with open(filename, 'r') as file:
+                data = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Si le fichier n'existe pas ou est vide/corrompu, initialiser un nouveau dictionnaire
+            data = {}
         # créer le format de donnée à écrire
-        data = {'réponse' : input_string}
+        data += (" " + input_string)
         # écrire les données dans le fichier de réponse
-        with open('S_ecr.txt', 'w') as file:
+        with open('S_ecr.txt', 'w', encoding='utf-8') as file:
             json.dump(data, file, indent=4)
     '''
     Définition: Vérifie si la connexion existe, sinon il la crée
