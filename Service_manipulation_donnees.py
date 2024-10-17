@@ -46,6 +46,8 @@ class service_manipulation_donnees() :
     def unpack_n_disconnect_ind(data) :
         return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND, data)
 
+
+
 #   def pack_n_akn_pos() :
 #       pass
 #   def unpack_n_akn_pos() :

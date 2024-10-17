@@ -6,7 +6,6 @@ import time
 import queue
 import logging
 
-from Service_de_liaison import Service_de_liaison
 
 # Logging pour tests
 logging.basicConfig(
@@ -46,7 +45,6 @@ class Er(threading.Thread):
 
     # Lire de transport va permettre de lire les paquets mis dans la file Er
     def lire_ER(self):
-        from Service_de_liaison import Service_de_liaison
 
         try:
             while self.running:
@@ -117,6 +115,7 @@ class Er(threading.Thread):
 
     def demande_connexion(self, donnee):
         # Crée une instance de la classe Service_de_liaison
+        from Service_de_liaison import Service_de_liaison
         service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
         (
             num_con,
@@ -170,6 +169,7 @@ class Er(threading.Thread):
 
     def transfert_de_donnees(self, _numCon, donnee):
         # Crée une instance de la classe Service_de_liaison
+        from Service_de_liaison import Service_de_liaison
         service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
 
         try:
