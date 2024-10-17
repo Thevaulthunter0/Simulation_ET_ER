@@ -40,12 +40,12 @@ class Er(threading.Thread):
         self.fileEt = fileET
 
         self.tableauConnexion = {}  # Clé = Tuple(id_app, adresse destination)
+        self.num_con = 0  # Initialize the connection number
         self.running = True  # Controlleur de thread
         self.lock = threading.Lock()  # Synchro des informations
 
     # Lire de transport va permettre de lire les paquets mis dans la file Er
     def lire_ER(self):
-
         try:
             while self.running:
                 paquet_brut = self.fileEr.get(timeout=1)  # Attend paquet
@@ -124,15 +124,22 @@ class Er(threading.Thread):
             addr_dest,
         ) = service_manipulation_donnees.unpack_n_connect(donnee)
 
+        with self.lock:
+            self.num_con += 1
+            num_con = self.num_con
+
         logging.info(
             f"N_CONNECT reçu: NumCon={num_con}, TypePaquet={type_p}, "
             f"AddrSrc={addr_src}, AddrDest={addr_dest}"
         )
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
-            result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con,
-                                                               _AddrSrc=addr_src, _AddrDest=addr_dest,
-                                                               _Raison='00000010')
+            result = service_manipulation_donnees.pack_n_disconnect_ind(
+                _numCon=num_con,
+                _AddrSrc=addr_src,
+                _AddrDest=addr_dest,
+                _Raison='00000010'
+            )
 
         else:
 
@@ -149,19 +156,39 @@ class Er(threading.Thread):
             if reponse:
                 packet_type = reponse[1]
 
-                if packet_type == '00001111':
+                if packet_type == '00001111':  # Connection established
                     num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
-                    result = service_manipulation_donnees.pack_comm_etablie(_numCon=num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
+                    result = service_manipulation_donnees.pack_comm_etablie(
+                        _numCon=num_con, _AddrSrc=addr_src, _AddrDest=addr_dest
+                    )
 
-                elif packet_type == '00010011':
-                    num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(reponse)
-                    result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _AddrSrc=addr_src,
-                                                                            _AddrDest=addr_dest, _Raison=raison )
+                    # Add the connection to the tableauConnexion
+                    with self.lock:
+                        self.tableauConnexion[(num_con, addr_dest)] = (addr_src, addr_dest)
+                        logging.info(f"Connection established: {self.tableauConnexion}")
+
+                elif packet_type == '00010011':  # Connection refused
+                    num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
+                        reponse)
+                    result = service_manipulation_donnees.pack_n_disconnect_ind(
+                        _numCon=num_con, _AddrSrc=addr_src,
+                        _AddrDest=addr_dest, _Raison=raison
+                    )
+
+
 
             else:
-                num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(reponse)
-                result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=num_con, _AddrSrc=addr_src,
-                                                                            _AddrDest=addr_dest, _Raison=raison)
+
+                num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
+                    reponse)
+
+                result = service_manipulation_donnees.pack_n_disconnect_ind(
+
+                    _numCon=num_con, _AddrSrc=addr_src,
+
+                    _AddrDest=addr_dest, _Raison=raison
+
+                )
 
         return result # Todo(): Je return une primitive en un format de paquet
 
