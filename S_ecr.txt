@@ -1,3 +1,7 @@
 {
-
+    "740": " Connexion établie pour 0",
+    "958": " Connexion établie pour 1",
+    "361": " Déconnexion confirmer pour 0",
+    "227": " Connexion établie pour 0",
+    "222": " Connexion établie pour 1"
 }

@@ -1,0 +1,3 @@
+Acceptation de la connexion pour _numCon 1
+Acceptation de la connexion pour _numCon 2
+Acceptation de la connexion pour _numCon 3
