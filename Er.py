@@ -50,6 +50,7 @@ class Er(threading.Thread):
         try:
             while self.running:
                 paquet_brut = self.fileEr.get(timeout=1)  # Attend paquet
+                print(str(paquet_brut))
                 # Traitement du paquet
                 type_paquet = paquet_brut.get("type_paquet")
                 logging.info(
@@ -62,7 +63,7 @@ class Er(threading.Thread):
                 if type_paquet == 11:  # N_CONNECT
                     logging.info(f"Demande de connexion commence: {type_paquet}: {data}")
                     paquet = self.demande_connexion(donnee=data)
-                    return self.envoyer_ET(paquet)
+                    self.envoyer_ET(paquet)
 
                 elif type_paquet == 15 or type_paquet == 10:  # N_DISCONNECT_REQ
                     logging.info(f"Demande de deconnexion commence: {type_paquet}: {data}")
@@ -144,13 +145,13 @@ class Er(threading.Thread):
             _num_con = self.num_con
 
         logging.info(
-            f"N_CONNECT reçu: NumCon={num_con}, TypePaquet={type_p}, "
+            f"N_CONNECT reçu: NumCon={_num_con}, TypePaquet={type_p}, "
             f"AddrSrc={addr_src}, AddrDest={addr_dest}"
         )
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
             result = (15  ,service_manipulation_donnees.pack_n_disconnect_ind(
-                _numCon=num_con,
+                _numCon= num_con,
                 _AddrSrc=addr_src,
                 _AddrDest=addr_dest,
                 _Raison=2) #'00000010' = 2

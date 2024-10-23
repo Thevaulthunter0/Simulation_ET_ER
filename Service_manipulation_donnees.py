@@ -133,7 +133,7 @@ class service_manipulation_donnees() :
     @staticmethod
     def pack_n_disconnect_req(_numCon, _typePaquet, _AddrSrc, _AddrDest):
         return struct.pack(
-            FP.Format_paquet.N_DISCONNECT_IND.value,
+            FP.Format_paquet.N_DISCONNECT_REQ.value,
             _numCon,
             _typePaquet,
             _AddrSrc,

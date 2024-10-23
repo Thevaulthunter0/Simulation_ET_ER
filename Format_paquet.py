@@ -25,8 +25,8 @@ class Format_paquet(Enum) :
     #  8    40 bits    1
     #Raison = Distant refuse la connexion(00000001 (1) )
     #       = Le fournisseur de service refuse (00000010 (2) )
-    N_DISCONNECT_IND = '!BBBB'
-
+    N_DISCONNECT_IND = '!BBBBB'
+    N_DISCONNECT_REQ = "!BBBB"
     #---Paquet transfert de données---
     #   --------------         Type de paquet =
     #  |Numero de con | B       -------------------

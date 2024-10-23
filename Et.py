@@ -17,6 +17,7 @@ class Et(threading.Thread) :
         self.addSrc = addSrc
 
         self.lockFileEt = threading.Lock()
+        self.lockFileEr = threading.Lock()
 
         self.lockS_ecr = threading.Lock()
         self.lockFile = threading.Lock()
@@ -76,7 +77,7 @@ class Et(threading.Thread) :
                         #Envoyer une demande de deconnexion au thread enfant
                         with self.lockFile :
                             self.tableauFile[existingNum].put("decon")
-                #Demande d'envoie de date a un numero d'application et d'un numero de destination
+                #Demande d'envoie de data a un numero d'application et d'un numero de destination
                 case _ :
                     existingNum = self.validation_creation_connexion(data['id_app'],data['id_dest'])
                     if existingNum != None :
@@ -135,7 +136,7 @@ class Et(threading.Thread) :
                         11,self.addSrc,addDest)
                     self.ecrire_Er(11,struct_n_connect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET))---------------------------------------------------------------------------------------------------------------------------
-                    #donnee = {"type_paquet" : 11, "data" : SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest)}
+                    #donnee = (11, SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest), )
                     #self.fileEt.put(donnee)
                     #self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon ,"connexion établie")
                     # -----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
@@ -171,8 +172,10 @@ class Et(threading.Thread) :
                     if donneeEt != None:
                         if type == 11 :
                             print("- Section lire fileEt lecture de connexion sur fileEt -")
-                            #Utilise le numero de connexion 
+                            print("oldCon : " + str(numCon))
+                            #Utilise le nouveau numero de connexion 
                             newCon = donneeEt[1][0]
+                            print("newCon : " + str(numCon))
                             with self.lockFile : 
                                 self.tableauFile[newCon] = self.tableauFile.pop(numCon);
                             thread_local.threadNumCon = newCon
@@ -222,10 +225,10 @@ class Et(threading.Thread) :
 
     def lire_Et(self, identifiant_thread) :
         if self.fileEt.empty() == True :
-            print("fileEt is empty")
             pass
         else :
-            pack_donnee = self.peek_Et()
+            with self.lockFileEt :
+                pack_donnee = self.peek_Et()
             type = pack_donnee[0]
             match type :
                 case 11:
@@ -240,7 +243,7 @@ class Et(threading.Thread) :
                 case 21:
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee[1])
                 case __ :
-                    return None         
+                    return None      
             if unpack_donnee[0] != identifiant_thread :
                 return None
             else :
@@ -254,8 +257,9 @@ class Et(threading.Thread) :
     Output : NA
     '''
     def ecrire_Er(self, type_paquet ,raw_data) :
-        donnee = {"type_paquet" : type_paquet, "data" : raw_data}
-        self.fileEr.put(donnee)
+        with self.lockFileEr :
+            donnee = {"type_paquet" : type_paquet, "data" : raw_data}
+            self.fileEr.put(donnee)
 
     '''
     Définition: Permettre de regarger(peek) le premier objet dans la file sans la defiler
@@ -263,8 +267,7 @@ class Et(threading.Thread) :
     Output : Première instance de la file 
     '''
     def peek_Et(self) :
-        with self.lockFileEt :
-            return self.fileEt.queue[0]
+        return self.fileEt.queue[0]
         
 
     '''
