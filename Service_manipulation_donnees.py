@@ -105,3 +105,16 @@ class service_manipulation_donnees() :
         _dernierByte = pack_data[1]
         _numProchainPaquet = _dernierByte[8:5]
         return (_numCon, _numProchainPaquet)
+    
+    def unpack_N_DATA_req(data):
+        _numCon = struct.unpack('B', data[0:1])[0]  # Extraire le premier octet
+        _data = data[1:]  # Récupérer le reste des données après le premier octet
+
+        return _numCon, _data
+
+    def pack_N_DATA_req(_numCon, _data):
+        if isinstance(_data, str):
+            _data = _data.encode()  # Convertir la chaîne en bytes
+
+        # On empaquette un octet pour le numéro de connexion suivi du paquet de données
+        return struct.pack('B', _numCon) + _data

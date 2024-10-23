@@ -1,3 +1,4 @@
-_numCon:1, _typePaquet:11, _AddrSrc:16, _AddrDest:45
-_numCon:2, _typePaquet:11, _AddrSrc:16, _AddrDest:134
-_numCon:3, _typePaquet:11, _AddrSrc:16, _AddrDest:69
+_numCon:1, _typePaquet:11, _AddrSrc:67, _AddrDest:45
+_numCon:2, _typePaquet:11, _AddrSrc:67, _AddrDest:134
+_numCon:1, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'Exemple de donn\xc3\x83\xc2\xa9es pour 2'
+_numCon:3, _typePaquet:11, _AddrSrc:67, _AddrDest:69

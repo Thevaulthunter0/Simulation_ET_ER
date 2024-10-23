@@ -154,7 +154,8 @@ class Et(threading.Thread) :
                 #Les donnee a transferer a ER
                 elif self.tableauConnexion[(id_app, addDest)][1] == "connexion établie" :
                     print(f"{threading.get_ident()} : DATA")  
-                    self.ecrire_Er(0,donneeT)
+                    pack_donneet = SMD.service_manipulation_donnees.pack_N_DATA_req(numCon, donneeT)
+                    self.ecrire_Er(0,pack_donneet)
 
             except file.Empty :
                 continue
