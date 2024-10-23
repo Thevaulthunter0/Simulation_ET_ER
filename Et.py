@@ -170,9 +170,16 @@ class Et(threading.Thread) :
                     if donneeEt != None:
                         if type == 11 :
                             print("- Section lire fileEt lecture de connexion sur fileEt -")
+                            #Utilise le numero de connexion 
+                            newCon = donneeEt[1][0]
+                            with self.lockFile : 
+                                self.tableauFile[newCon] = self.tableauFile.pop(numCon);
+                            thread_local.threadNumCon = newCon
+                            with self.lockCon :
+                                self.tableauConnexion[(id_app,addDest)] = (newCon, "connexion établie")
+
                             #Modifier l'état dans le tableauDeCon
                             #Écrire dans fichier réponse
-                            self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon, "connexion établie")
                             self.write_in_response_file("Connexion établie pour " + str(thread_local.threadNumCon))
                             
                         #Reçoit N_DISCONNECT_IND
@@ -221,17 +228,16 @@ class Et(threading.Thread) :
             type = pack_donnee[0]
             match type :
                 case 11:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_connect(pack_donnee.get("data"))
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_comm_etablie(pack_donnee[1])
 
                 case 15:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee.get("data"))
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee[1])
 
                 case 10:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee.get("data"))
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee[1])
                 
                 case 21:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee.get("data"))
-
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee[1])
                 case __ :
                     return None         
             if unpack_donnee[0] != identifiant_thread :

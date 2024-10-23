@@ -118,3 +118,14 @@ class service_manipulation_donnees() :
 
         # On empaquette un octet pour le numéro de connexion suivi du paquet de données
         return struct.pack('B', _numCon) + _data
+    
+        # Paquet de communication etablie
+    @staticmethod
+    def pack_comm_etablie(_numCon, _AddrSrc, _AddrDest):
+        return struct.pack(
+            FP.Format_paquet.N_CONNECT.value, _numCon, 15, _AddrSrc, _AddrDest     #'00001111' = 15
+        )
+
+    @staticmethod
+    def unpack_comm_etablie(data):
+        return struct.unpack(FP.Format_paquet.N_CONNECT.value, data)

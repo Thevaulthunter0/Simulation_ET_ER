@@ -6,13 +6,16 @@ import random
 from PacketSender import PacketSender
 
 if __name__ == "__main__":
-    """Effacer le contenu des fichiers L_ecr.txt et L_lec.txt."""
+    """Effacer le contenu des fichiers"""
     with open("fichiers/L_ecr.txt", "w") as fichier:
         pass  # Écrire rien pour vider le fichier
     with open("fichiers/L_lec.txt", "w") as fichier:
         pass  # Écrire rien pour vider le fichier
+    with open("S_ecr.txt" , "w") as fichier :
+        pass 
 
-    addSrc = random.randrange(0,255)
+    #addSrc = random.randrange(0,255)
+    addSrc = 3
 
     fileEt = queue.Queue()
     fileEr = queue.Queue()
