@@ -88,7 +88,7 @@ class Er(threading.Thread):
 
     # Thread principal d'Er
     def run(self):        
-      # La méthode va commencer seulement si le threading est débuté
+    # La méthode va commencer seulement si le threading est débuté
         while self.running:
             self.lire_ER()
 
@@ -148,11 +148,11 @@ class Er(threading.Thread):
         )
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
-            result = service_manipulation_donnees.pack_n_disconnect_ind(
+            result = (15  ,service_manipulation_donnees.pack_n_disconnect_ind(
                 _numCon=num_con,
                 _AddrSrc=addr_src,
                 _AddrDest=addr_dest,
-                _Raison=2  #'00000010' = 2
+                _Raison=2) #'00000010' = 2
             )
 
         else:
@@ -176,8 +176,8 @@ class Er(threading.Thread):
 
                 if packet_type == 15:  # Connection established '00001111' = 15
                     _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
-                    result = service_manipulation_donnees.pack_comm_etablie(
-                        _numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest
+                    result = ( 11 ,service_manipulation_donnees.pack_comm_etablie(
+                        _numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
                     )
 
                     # Change the state of connection in the tableauConnexion
@@ -188,9 +188,9 @@ class Er(threading.Thread):
                 elif packet_type == 19:  # Connection refused '00010011' = 19
                     _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
                         reponse)
-                    result = service_manipulation_donnees.pack_n_disconnect_ind(
+                    result = ( 15, service_manipulation_donnees.pack_n_disconnect_ind(
                         _numCon=_num_con, _AddrSrc=addr_src,
-                        _AddrDest=addr_dest, _Raison=raison
+                        _AddrDest=addr_dest, _Raison=raison)
                     )
 
 
@@ -199,13 +199,12 @@ class Er(threading.Thread):
                 _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
                     reponse)
                 logging.info(f"--------------: {_num_con}")
-                result = service_manipulation_donnees.pack_n_disconnect_ind(
+                result = (15, service_manipulation_donnees.pack_n_disconnect_ind(
 
                     _numCon=_num_con, _AddrSrc=addr_src,
 
                     _AddrDest=addr_dest, _Raison=raison
-
-                )
+                ))
 
 
         return result # Todo(): Je return une primitive en un format de paquet

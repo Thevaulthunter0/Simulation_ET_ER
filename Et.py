@@ -133,8 +133,8 @@ class Et(threading.Thread) :
                         11,self.addSrc,addDest)
                     self.ecrire_Er(11,struct_n_connect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET))---------------------------------------------------------------------------------------------------------------------------
-                    donnee = {"type_paquet" : 11, "data" : SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest)}
-                    self.fileEt.put(donnee)
+                    #donnee = {"type_paquet" : 11, "data" : SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest)}
+                    #self.fileEt.put(donnee)
                     #self.tableauConnexion[(id_app, addDest)] = (thread_local.threadNumCon ,"connexion établie")
                     # -----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
 
@@ -146,8 +146,8 @@ class Et(threading.Thread) :
                         0,self.addSrc,addDest,1)
                     self.ecrire_Er(10,struct_n_disconnect_ind)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET)---------------------------------------------------------------------------------------------------------------------------
-                    donnee = {"type_paquet" : 15, "data" : SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,0,self.addSrc,addDest,1)}
-                    self.fileEt.put(donnee)
+                    #donnee = {"type_paquet" : 15, "data" : SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,0,self.addSrc,addDest,1)}
+                    #self.fileEt.put(donnee)
                     #running = False
                     #-----------------TO REMOVE---------------------------------------------------------------------------------------------------------------------------
 
@@ -218,7 +218,7 @@ class Et(threading.Thread) :
             pass
         else :
             pack_donnee = self.peek_Et()
-            type = pack_donnee.get("type_paquet")
+            type = pack_donnee[0]
             match type :
                 case 11:
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_n_connect(pack_donnee.get("data"))
