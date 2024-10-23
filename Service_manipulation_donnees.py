@@ -91,6 +91,14 @@ class service_manipulation_donnees() :
     Output :
         Tuple(_numCon,_numProchainPaquet)
 
+#   def pack_n_akn_pos() :
+#       pass
+#   def unpack_n_akn_pos() :
+#       pass
+#   def pack_n_akn_neg() :
+#       pass
+#   def unpack_n_akn_neg() :
+#       pass
     '''
     def unpack_n_akn_neg(pack_data) :
         _numCon = pack_data[0]

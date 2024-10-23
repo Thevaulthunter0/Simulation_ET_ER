@@ -15,6 +15,7 @@ class Et(threading.Thread) :
         self.fileEt = fileEt
         self.fileEr = fileEr
         self.addSrc = addSrc
+
         self.lockS_ecr = threading.Lock()
         self.lockFile = threading.Lock()
         self.tableauFile = {}   #Clé = numCon    valeur = File du thread
@@ -24,11 +25,13 @@ class Et(threading.Thread) :
         self.tableauConnexion = {}  #Clé = Tuple(id_app, adresse destination)     valeur = tuple(numCon, "Attente de confirmation" ou "connexion établie")
         self.compteurCon = 0  # Compteur pour numCon
         
+
     '''
     Définition : Fonction que le thread principal utilise
     Input : NA
     Output : NA
     '''
+
     def run(self):
         #------------ Boucle ----------------------------------------------------------
         # 1. Regarder dans le fichier de donnee -> read_data_file()
@@ -95,6 +98,7 @@ class Et(threading.Thread) :
             int id_app
     Output : NA
     '''
+
     def run_thread_con(self, numCon, addDest, id_app ) :
         #-------- Lors de la création --------------------
         # 2.2.1 Creer sa fileT (file thread)    [x]
@@ -234,6 +238,7 @@ class Et(threading.Thread) :
             else :
                 pop = self.fileEt.get(timeout=1)
                 return (type, unpack_donnee)
+
 
     '''
     Définition : Permettre d'allez mettre un paquet dans la file Er 
