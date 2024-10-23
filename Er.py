@@ -7,6 +7,7 @@ import queue
 import logging
 
 
+
 # Logging pour tests
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -64,26 +65,8 @@ class Er(threading.Thread):
                     return self.envoyer_ET(paquet)
 
                 elif type_paquet == 15:  # N_DISCONNECT_REQ
-                    (
-                        num_con,
-                        type_p,
-                        addr_src,
-                        addr_dest,
-                        raison,
-                    ) = service_manipulation_donnees.unpack_n_disconnect_ind(data)
-                    logging.info(
-                        f"N_DISCONNECT_IND reçu: NumCon={num_con}, TypePaquet={type_p}, AddrSrc={addr_src},"
-                        f" AddrDest={addr_dest}, Raison={raison}"
-                    )
-
-                    disconnect_ack = {
-                        "type_paquet": 25,
-                        "data": service_manipulation_donnees.pack_n_disconnect_ack(
-                            num_con
-                        ),
-                    }
-                    self.envoyer_ET(disconnect_ack)
-
+                    logging.info(f"Demande de deconnexion commence: {type_paquet}: {data}")
+                    self.liberation_connexion(donnee=data)
 
                 elif type_paquet == 0: # DATA.REQ
                     numCon, donnee = service_manipulation_donnees.unpack_N_DATA_req(data)
@@ -112,6 +95,37 @@ class Er(threading.Thread):
     def stop(self):
         self.running = False
 
+    def liberation_connexion(self, donnee):
+        # Crée une instance de la classe Service_de_liaison
+        from Service_de_liaison import Service_de_liaison
+        service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
+
+        (
+            num_con,
+            type_p,
+            addr_src,
+            addr_dest,
+        ) = service_manipulation_donnees.unpack_n_disconnect_req(donnee)
+        logging.info(
+            f"N_DISCONNECT_REQ reçu: NumCon={num_con}, TypePaquet={type_p}, AddrSrc={addr_src},"
+            f" AddrDest={addr_dest}"
+        )
+        raison = "111"
+        paquet_n_disconnect_ind = service_manipulation_donnees.pack_n_disconnect_ind(num_con, addr_src, addr_dest,
+                                                                                     raison)
+
+        service_liaison.liberation_de_connection(paquet_n_disconnect_ind)
+
+        """
+        # Est-ce qu'on enleve
+        disconnect_ack = {
+            "type_paquet": 25,
+            "data": service_manipulation_donnees.pack_n_disconnect_ack(
+                num_con
+            ),
+        }
+        self.envoyer_ET(disconnect_ack)
+        """
 
     def demande_connexion(self, donnee):
         # Crée une instance de la classe Service_de_liaison
@@ -269,7 +283,7 @@ class Er(threading.Thread):
                     while not ack_received and retry_count < 2:
                         logging.info(f"Tentative d'envoi du paquet: {retry_count}")
                         # PACK les données.
-                        paquet_a_envoyer = service_manipulation_donnees.pack_paquet_de_donnees(
+                        paquet_a_envoyer = service_manipulation_donnees.pack_N_DATA_ind(
                             _numCon=_numCon,
                             _numProchainPaquet=p_r,
                             _dernierPaquet=m,
@@ -458,7 +472,7 @@ class service_manipulation_donnees:
         return binary.zfill(num_bits)
 
     @staticmethod
-    def pack_paquet_de_donnees(
+    def pack_N_DATA_ind(
         _numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee
     ):
 
@@ -583,7 +597,7 @@ if __name__ == "__main__":
 
     thread_sender = PacketSender(fileEt)
     thread_sender.start()
-
+    """
     # Envoyer un example de N_CONNECT dans la console
     packet_n_connect = {
         "type_paquet": 11,
@@ -597,6 +611,15 @@ if __name__ == "__main__":
     packet_n_connect = {
         "type_paquet": 0,
         "data": service_manipulation_donnees.pack_N_DATA_req(1, '111')
+    }
+    fileEr.put(packet_n_connect)
+    
+    time.sleep(2)"""
+
+    # Envoyer un example de N_CONNECT dans la console
+    packet_n_connect = {
+        "type_paquet": 15,
+        "data": service_manipulation_donnees.pack_n_disconnect_req(1, 16, 220, 200)
     }
     fileEr.put(packet_n_connect)
 

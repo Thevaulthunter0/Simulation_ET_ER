@@ -56,6 +56,12 @@ class Service_de_liaison():
 
         return result
 
+    def liberation_de_connection(self, data):
+        _numCon, _typePaquet, _AddrSrc, _AddrDest, _raison = service_manipulation_donnees.unpack_n_disconnect_ind(data)
+        self.ecrire_vers_L_lec(
+        f"_numCon:{_numCon}, _AddrSrc:{_AddrSrc}, _AddrDest:{_AddrDest}, _raison:{_raison}")
+        self.ecrire_vers_L_ecr(f"Liberation de la connexion pour _numCon {_numCon}")
+
     def ecrire_vers_L_ecr(self, message):
 
         # Ecrire reponse dans fichier L_ecr.txt
