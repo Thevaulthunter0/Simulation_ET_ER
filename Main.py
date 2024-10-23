@@ -14,8 +14,7 @@ if __name__ == "__main__":
     with open("S_ecr.txt" , "w") as fichier :
         pass 
 
-    #addSrc = random.randrange(0,255)
-    addSrc = 3
+    addSrc = random.randrange(0,255)
 
     fileEt = queue.Queue()
     fileEr = queue.Queue()

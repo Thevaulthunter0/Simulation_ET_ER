@@ -129,3 +129,17 @@ class service_manipulation_donnees() :
     @staticmethod
     def unpack_comm_etablie(data):
         return struct.unpack(FP.Format_paquet.N_CONNECT.value, data)
+    
+    @staticmethod
+    def pack_n_disconnect_req(_numCon, _typePaquet, _AddrSrc, _AddrDest):
+        return struct.pack(
+            FP.Format_paquet.N_DISCONNECT_IND.value,
+            _numCon,
+            _typePaquet,
+            _AddrSrc,
+            _AddrDest,
+        )
+
+    @staticmethod
+    def unpack_n_disconnect_req(data):
+        return struct.unpack(FP.Format_paquet.N_DISCONNECT_IND.value, data)

@@ -64,12 +64,13 @@ class Er(threading.Thread):
                     paquet = self.demande_connexion(donnee=data)
                     return self.envoyer_ET(paquet)
 
-                elif type_paquet == 15:  # N_DISCONNECT_REQ
+                elif type_paquet == 15 or type_paquet == 10:  # N_DISCONNECT_REQ
                     logging.info(f"Demande de deconnexion commence: {type_paquet}: {data}")
                     self.liberation_connexion(donnee=data)
 
                 elif type_paquet == 0: # DATA.REQ
                     numCon, donnee = service_manipulation_donnees.unpack_N_DATA_req(data)
+                    logging.info(f"envoie de donnee commence: {type_paquet}: {data}")
                     self.transfert_de_donnees(_numCon =numCon, donnee=donnee)
 
                 self.fileEr.task_done()
@@ -112,7 +113,7 @@ class Er(threading.Thread):
         )
         raison = "111"
         paquet_n_disconnect_ind = service_manipulation_donnees.pack_n_disconnect_ind(num_con, addr_src, addr_dest,
-                                                                                     raison)
+                                                                                    raison)
 
         service_liaison.liberation_de_connection(paquet_n_disconnect_ind)
 

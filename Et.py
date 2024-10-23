@@ -16,6 +16,8 @@ class Et(threading.Thread) :
         self.fileEr = fileEr
         self.addSrc = addSrc
 
+        self.lockFileEt = threading.Lock()
+
         self.lockS_ecr = threading.Lock()
         self.lockFile = threading.Lock()
         self.tableauFile = {}   #Clé = numCon    valeur = File du thread
@@ -142,9 +144,9 @@ class Et(threading.Thread) :
                 elif donneeT == "decon" and self.tableauConnexion[(id_app, addDest)][1] == "connexion établie":
                     print(f"{threading.get_ident()} : DECON")   
                     #Creer un paquet de type n_disconnect
-                    struct_n_disconnect_ind = SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,
-                        0,self.addSrc,addDest,1)
-                    self.ecrire_Er(10,struct_n_disconnect_ind)
+                    struct_n_disconnect_req = SMD.service_manipulation_donnees.pack_n_disconnect_req(thread_local.threadNumCon,
+                        19,self.addSrc,addDest)
+                    self.ecrire_Er(10,struct_n_disconnect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET)---------------------------------------------------------------------------------------------------------------------------
                     #donnee = {"type_paquet" : 15, "data" : SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,0,self.addSrc,addDest,1)}
                     #self.fileEt.put(donnee)
@@ -162,7 +164,6 @@ class Et(threading.Thread) :
 
             #Lire sur la fileET
             try :  
-                
                 donneeEt = self.lire_Et(thread_local.threadNumCon)
                 if donneeEt != None :
                     type = donneeEt[0]
@@ -178,9 +179,8 @@ class Et(threading.Thread) :
                             with self.lockCon :
                                 self.tableauConnexion[(id_app,addDest)] = (newCon, "connexion établie")
 
-                            #Modifier l'état dans le tableauDeCon
                             #Écrire dans fichier réponse
-                            self.write_in_response_file("Connexion établie pour " + str(thread_local.threadNumCon))
+                            self.write_in_response_file("Connexion établie pour " + str(newCon))
                             
                         #Reçoit N_DISCONNECT_IND
                         elif type == 15 :
@@ -222,6 +222,7 @@ class Et(threading.Thread) :
 
     def lire_Et(self, identifiant_thread) :
         if self.fileEt.empty() == True :
+            print("fileEt is empty")
             pass
         else :
             pack_donnee = self.peek_Et()
@@ -262,7 +263,7 @@ class Et(threading.Thread) :
     Output : Première instance de la file 
     '''
     def peek_Et(self) :
-        with self.fileEt.mutex :
+        with self.lockFileEt :
             return self.fileEt.queue[0]
         
 
@@ -293,7 +294,7 @@ class Et(threading.Thread) :
         filename = 'S_ecr.txt'
         
         with self.lockS_ecr :
-            # Lire les données existantes du fichier
+            #Lire les données existantes du fichier
             try:
                 with open(filename, 'r', encoding='utf-8') as file:
                     data = json.load(file)
@@ -301,11 +302,12 @@ class Et(threading.Thread) :
             except (FileNotFoundError, json.JSONDecodeError):
                 # Si le fichier n'existe pas ou est vide/corrompu, initialiser un nouveau dictionnaire
                 data = {}
-            # créer le format de donnée à écrire
+            #créer le format de donnée à écrire
             key = str(int(random.randint(0,999)))
             data[key] = (" " + input_string)
-            # écrire les données dans le fichier de réponse
-            with open(filename, 'w', encoding='utf-8') as file:
+
+            #écrire les données dans le fichier de réponse
+            with open(filename, 'a', encoding='utf-8') as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
 
     '''

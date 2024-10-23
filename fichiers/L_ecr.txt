@@ -2,3 +2,4 @@ Acceptation de la connexion pour _numCon 1
 Acceptation de la connexion pour _numCon 2
 Acceptation de la connexion pour _numCon 3
 Acceptation pour le transfert de donnees _numCon: 2
+Liberation de la connexion pour _numCon 2
