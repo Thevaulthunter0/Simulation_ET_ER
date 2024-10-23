@@ -87,8 +87,8 @@ class Er(threading.Thread):
             logging.debug(f"Packet sent to fileET: {paquet}")
 
     # Thread principal d'Er
-    def run(self):
-        # La méthode va commencer seulement si le threading est débuté
+    def run(self):        
+      # La méthode va commencer seulement si le threading est débuté
         while self.running:
             self.lire_ER()
 

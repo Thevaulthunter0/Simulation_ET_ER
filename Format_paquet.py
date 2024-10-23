@@ -10,8 +10,8 @@ class Format_paquet(Enum) :
     #  |Adresse dest  | B
     #   --------------
     #  8    32bits    1
-    # Type paquet = 00001011(11)
-    # Type paquet = 00001111(15)
+    # Type paquet = 00001011(11) N_CONNECT.req
+    # Type paquet = 00001111(15) N_CONNECT.conf
     N_CONNECT = '!BBBB'
 
     #---refus de connexion et libération de connexion---
