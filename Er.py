@@ -49,8 +49,8 @@ class Er(threading.Thread):
     def lire_ER(self):
         try:
             while self.running:
-                paquet_brut = self.fileEr.get(timeout=1)  # Attend paquet
-                print(str(paquet_brut))
+                paquet_brut = self.fileEr.get(timeout=0.5)  # Attend paquet
+                
                 # Traitement du paquet
                 type_paquet = paquet_brut.get("type_paquet")
                 logging.info(
@@ -77,7 +77,7 @@ class Er(threading.Thread):
                 self.fileEr.task_done()
 
         except queue.Empty:
-            time.sleep(0.1)
+            pass
         except Exception as e:
             logging.error(f"Error in lire_ER: {e}, Line: {traceback.format_exc()}")
 
@@ -139,10 +139,11 @@ class Er(threading.Thread):
             addr_src,
             addr_dest,
         ) = service_manipulation_donnees.unpack_n_connect(donnee)      #todo: Quelle format sera N_CONNECT.req
-
+        old_num = num_con
+        
         with self.lock:
-            self.num_con += 1
             _num_con = self.num_con
+            self.num_con += 1
 
         logging.info(
             f"N_CONNECT reçu: NumCon={_num_con}, TypePaquet={type_p}, "
@@ -151,7 +152,7 @@ class Er(threading.Thread):
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
             result = (15  ,service_manipulation_donnees.pack_n_disconnect_ind(
-                _numCon= num_con,
+                _numCon= old_num,
                 _AddrSrc=addr_src,
                 _AddrDest=addr_dest,
                 _Raison=2) #'00000010' = 2
@@ -180,7 +181,7 @@ class Er(threading.Thread):
                     _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
                     result = ( 11 ,service_manipulation_donnees.pack_comm_etablie(
                         _numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
-                    )
+                    ,old_num)
 
                     # Change the state of connection in the tableauConnexion
                     with self.lock:
@@ -191,7 +192,7 @@ class Er(threading.Thread):
                     _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
                         reponse)
                     result = ( 15, service_manipulation_donnees.pack_n_disconnect_ind(
-                        _numCon=_num_con, _AddrSrc=addr_src,
+                        _numCon=old_num, _AddrSrc=addr_src,
                         _AddrDest=addr_dest, _Raison=raison)
                     )
 
@@ -203,7 +204,7 @@ class Er(threading.Thread):
                 logging.info(f"--------------: {_num_con}")
                 result = (15, service_manipulation_donnees.pack_n_disconnect_ind(
 
-                    _numCon=_num_con, _AddrSrc=addr_src,
+                    _numCon=old_num, _AddrSrc=addr_src,
 
                     _AddrDest=addr_dest, _Raison=raison
                 ))

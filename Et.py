@@ -72,11 +72,11 @@ class Et(threading.Thread) :
                             self.tableauFile[newNum].put("con")
                 #Demende de deconnexion d'un numero d'application et d'un numero de destination
                 case 'decon':
-                    existingNum = self.validation_creation_connexion(data['id_app'],data['id_dest'])
-                    if existingNum != None :
+                    existingNumD = self.validation_creation_connexion(data['id_app'],data['id_dest'])
+                    if existingNumD != None :
                         #Envoyer une demande de deconnexion au thread enfant
                         with self.lockFile :
-                            self.tableauFile[existingNum].put("decon")
+                            self.tableauFile[existingNumD].put("decon")
                 #Demande d'envoie de data a un numero d'application et d'un numero de destination
                 case _ :
                     existingNum = self.validation_creation_connexion(data['id_app'],data['id_dest'])
@@ -84,7 +84,7 @@ class Et(threading.Thread) :
                         #Envoyer des donnees au thread enfant
                         with self.lockFile :
                             self.tableauFile[existingNum].put(data['data'])            
-            #time.sleep(0.5)
+            #time.sleep(10)
 
         #Joindre tous les thread enfants
         with self.lockThread :
@@ -165,25 +165,15 @@ class Et(threading.Thread) :
 
             #Lire sur la fileET
             try :  
-                donneeEt = self.lire_Et(thread_local.threadNumCon)
+                donneeEt = self.lire_Et(id_app,addDest)
                 if donneeEt != None :
                     type = donneeEt[0]
                     #Reçoit N_CONNECT_CONF
                     if donneeEt != None:
                         if type == 11 :
                             print("- Section lire fileEt lecture de connexion sur fileEt -")
-                            print("oldCon : " + str(numCon))
-                            #Utilise le nouveau numero de connexion 
-                            newCon = donneeEt[1][0]
-                            print("newCon : " + str(numCon))
-                            with self.lockFile : 
-                                self.tableauFile[newCon] = self.tableauFile.pop(numCon);
-                            thread_local.threadNumCon = newCon
-                            with self.lockCon :
-                                self.tableauConnexion[(id_app,addDest)] = (newCon, "connexion établie")
-
                             #Écrire dans fichier réponse
-                            self.write_in_response_file("Connexion établie pour " + str(newCon))
+                            self.write_in_response_file("Connexion établie pour " + str(thread_local.threadNumCon))
                             
                         #Reçoit N_DISCONNECT_IND
                         elif type == 15 :
@@ -223,16 +213,19 @@ class Et(threading.Thread) :
                 # 10 : N_DISCONNECT_REQ 
                 # 21 : N_AKN_POS
 
-    def lire_Et(self, identifiant_thread) :
+    def lire_Et(self,id_app,addDest) :
         if self.fileEt.empty() == True :
             pass
         else :
             with self.lockFileEt :
                 pack_donnee = self.peek_Et()
             type = pack_donnee[0]
+            print(str(pack_donnee))
             match type :
                 case 11:
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_comm_etablie(pack_donnee[1])
+                    with self.lockCon :
+                        self.tableauConnexion[(id_app,addDest)] = (thread_local.threadNumCon, "connexion établie")
 
                 case 15:
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee[1])
@@ -244,7 +237,7 @@ class Et(threading.Thread) :
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee[1])
                 case __ :
                     return None      
-            if unpack_donnee[0] != identifiant_thread :
+            if unpack_donnee[0] != thread_local.threadNumCon :
                 return None
             else :
                 pop = self.fileEt.get(timeout=1)
@@ -297,21 +290,8 @@ class Et(threading.Thread) :
         filename = 'S_ecr.txt'
         
         with self.lockS_ecr :
-            #Lire les données existantes du fichier
-            try:
-                with open(filename, 'r', encoding='utf-8') as file:
-                    data = json.load(file)
-                    
-            except (FileNotFoundError, json.JSONDecodeError):
-                # Si le fichier n'existe pas ou est vide/corrompu, initialiser un nouveau dictionnaire
-                data = {}
-            #créer le format de donnée à écrire
-            key = str(int(random.randint(0,999)))
-            data[key] = (" " + input_string)
-
-            #écrire les données dans le fichier de réponse
             with open(filename, 'a', encoding='utf-8') as file:
-                json.dump(data, file, ensure_ascii=False, indent=4)
+                file.write(input_string + "\n")
 
     '''
     Définition: Vérifie si la connexion existe, sinon il la crée
@@ -327,4 +307,5 @@ class Et(threading.Thread) :
             print(f"Nouvelle connexion pour {id_app} {id_dest} : {self.compteurCon}")
             return self.compteurCon
         else:
+            print("!!!!!!" + str(self.tableauConnexion[cle][0]))
             return self.tableauConnexion[cle][0]
