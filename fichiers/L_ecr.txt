@@ -1,11 +1,8 @@
 Acceptation de la connexion pour _numCon 0
 Acceptation de la connexion pour _numCon 1
-pas de reponse pour le transfert de donnees _numCon: 1
-pas de reponse pour le transfert de donnees _numCon: 1
-pas de reponse pour le transfert de donnees _numCon: 1
-pas de reponse pour le transfert de donnees _numCon: 1
+Acceptation pour le transfert de donnees _numCon: 1
+Acceptation pour le transfert de donnees _numCon: 1
 Acceptation de la connexion pour _numCon 2
 Liberation de la connexion pour _numCon 1
-pas de reponse pour le transfert de donnees _numCon: 2
-pas de reponse pour le transfert de donnees _numCon: 2
+Acceptation pour le transfert de donnees _numCon: 2
 Liberation de la connexion pour _numCon 2

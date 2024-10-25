@@ -3,8 +3,6 @@ import random
 import logging
 
 class Service_de_liaison():
-
-
     def transfert_donnees(self, paquet, addr_source):
         _numCon, _numPaquet, _dernierPaquet, _numProchainPaquet, donnee = service_manipulation_donnees.unpack_paquet_de_donnees(paquet)
 
