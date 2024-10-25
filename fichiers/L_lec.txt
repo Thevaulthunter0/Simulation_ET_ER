@@ -1,3 +1,0 @@
-_numCon:0, _typePaquet:11, _AddrSrc:209, _AddrDest:31
-_numCon:1, _typePaquet:11, _AddrSrc:209, _AddrDest:134
-_numCon:2, _typePaquet:11, _AddrSrc:209, _AddrDest:47
