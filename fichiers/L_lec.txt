@@ -1,11 +1,3 @@
-_numCon:0, _typePaquet:11, _AddrSrc:90, _AddrDest:31
-_numCon:1, _typePaquet:11, _AddrSrc:90, _AddrDest:134
-_numCon:1, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'Exemple de donn\xc3\x83\xc2\xa9es pour 2'
-_numCon:1, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'Exemple de donn\xc3\x83\xc2\xa9es pour 2'
-_numCon:1, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'autre donn\xc3\x83\xc2\xa9es pour con 2'
-_numCon:1, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'autre donn\xc3\x83\xc2\xa9es pour con 2'
-_numCon:2, _typePaquet:11, _AddrSrc:90, _AddrDest:47
-_numCon:1, _AddrSrc:90, _AddrDest:134, _raison:111
-_numCon:2, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'Exemple de donn\xc3\x83\xc2\xa9es pour 3'
-_numCon:2, _numPaquet:1, _dernierPaquet:0, _numProchainPaquet:1, donnee:b'Exemple de donn\xc3\x83\xc2\xa9es pour 3'
-_numCon:2, _AddrSrc:90, _AddrDest:47, _raison:111
+_numCon:0, _typePaquet:11, _AddrSrc:209, _AddrDest:31
+_numCon:1, _typePaquet:11, _AddrSrc:209, _AddrDest:134
+_numCon:2, _typePaquet:11, _AddrSrc:209, _AddrDest:47

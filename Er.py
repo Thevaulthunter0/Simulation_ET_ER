@@ -139,7 +139,6 @@ class Er(threading.Thread):
             addr_src,
             addr_dest,
         ) = service_manipulation_donnees.unpack_n_connect(donnee)      #todo: Quelle format sera N_CONNECT.req
-        old_num = num_con
         
         with self.lock:
             _num_con = self.num_con
@@ -152,9 +151,9 @@ class Er(threading.Thread):
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
             result = (15  ,service_manipulation_donnees.pack_n_disconnect_ind(
-                _numCon= old_num,
-                _AddrSrc=addr_src,
-                _AddrDest=addr_dest,
+                _numCon= _num_con,
+                _AddrSrc= addr_src,
+                _AddrDest= addr_dest,
                 _Raison=2) #'00000010' = 2
             )
 
@@ -181,7 +180,7 @@ class Er(threading.Thread):
                     _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
                     result = ( 11 ,service_manipulation_donnees.pack_comm_etablie(
                         _numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
-                    ,old_num)
+                    )
 
                     # Change the state of connection in the tableauConnexion
                     with self.lock:
@@ -192,7 +191,7 @@ class Er(threading.Thread):
                     _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
                         reponse)
                     result = ( 15, service_manipulation_donnees.pack_n_disconnect_ind(
-                        _numCon=old_num, _AddrSrc=addr_src,
+                        _numCon=_num_con, _AddrSrc=addr_src,
                         _AddrDest=addr_dest, _Raison=raison)
                     )
 
@@ -204,7 +203,7 @@ class Er(threading.Thread):
                 logging.info(f"--------------: {_num_con}")
                 result = (15, service_manipulation_donnees.pack_n_disconnect_ind(
 
-                    _numCon=old_num, _AddrSrc=addr_src,
+                    _numCon=_num_con, _AddrSrc=addr_src,
 
                     _AddrDest=addr_dest, _Raison=raison
                 ))
@@ -579,57 +578,3 @@ class service_manipulation_donnees:
 
         # On empaquette un octet pour le numéro de connexion suivi du paquet de données
         return struct.pack('B', _numCon) + _data
-
-
-# Exemple d'utilisation
-if __name__ == "__main__":
-    """Effacer le contenu des fichiers L_ecr.txt et L_lec.txt."""
-    with open("fichiers/L_ecr.txt", "w") as fichier:
-        pass  # Écrire rien pour vider le fichier
-    with open("fichiers/L_lec.txt", "w") as fichier:
-        pass  # Écrire rien pour vider le fichier
-
-    # Queue pour les messages de console
-    fileEt = queue.Queue()
-    fileEr = queue.Queue()
-
-    # Commencer les threads
-    thread_er = Er(fileEt, fileEr)
-    thread_er.start()
-
-    thread_sender = PacketSender(fileEt)
-    thread_sender.start()
-    """
-    # Envoyer un example de N_CONNECT dans la console
-    packet_n_connect = {
-        "type_paquet": 11,
-        "data": service_manipulation_donnees.pack_n_connect(1, 11, 233, 231)
-    }
-    fileEr.put(packet_n_connect)
-
-    time.sleep(2)
-
-    # Envoyer un example de N_CONNECT dans la console
-    packet_n_connect = {
-        "type_paquet": 0,
-        "data": service_manipulation_donnees.pack_N_DATA_req(1, '111')
-    }
-    fileEr.put(packet_n_connect)
-    
-    time.sleep(2)"""
-
-    # Envoyer un example de N_CONNECT dans la console
-    packet_n_connect = {
-        "type_paquet": 15,
-        "data": service_manipulation_donnees.pack_n_disconnect_req(1, 16, 220, 200)
-    }
-    fileEr.put(packet_n_connect)
-
-    # Donner du temps pour process la commande
-    time.sleep(2)
-
-    # Arrete les threads
-    thread_er.stop()
-    thread_sender.stop()
-    thread_er.join()
-    thread_sender.join()
