@@ -1,5 +1,4 @@
 import queue
-import Format_paquet as FP
 import Er
 import Et
 import random
