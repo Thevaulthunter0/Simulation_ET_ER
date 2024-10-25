@@ -16,7 +16,7 @@ class Service_de_liaison():
                 f"pas de reponse pour le transfert de donnees _numCon: {_numCon}"
             )
             reponse = f"pas de reponse pour le transfert de donnees _numCon: {_numCon}"
-            result = None      # Todo(): Est-ce que je devrais return quelque chose ou implementer un timer?
+            result = None
 
         elif _numPaquet == random.randint(0, 7): # si = a un nombre entre 0 et 7
             reponse = f"Refu pour le transfert de donnees _numCon: {_numCon}"
@@ -36,26 +36,26 @@ class Service_de_liaison():
 
     def demande_conn(self, data):
 
-        _numCon, _typePaquet, _AddrSrc, _AddrDest = service_manipulation_donnees.unpack_paquet_d_appel(data)
+        _numCon, _typePaquet, _AddrSrc, _AddrDest = service_manipulation_donnees.unpack_N_CONNECT_IND(data)
         self.ecrire_vers_L_lec(f"_numCon:{_numCon}, _typePaquet:{_typePaquet}, _AddrSrc:{_AddrSrc}, _AddrDest:{_AddrDest}")
 
         if _AddrSrc % 13 == 0: # refus de connexion
             self.ecrire_vers_L_ecr(f'refus de connexion pour le _numCon{_numCon}')
-            result = service_manipulation_donnees.pack_n_disconnect_ind(_numCon=_numCon, _AddrSrc= _AddrSrc, _AddrDest=_AddrDest, _Raison=2)   # Raison '00000010' = 2
+            result = service_manipulation_donnees.pack_N_DISCONNECT_REQ(_numCon=_numCon, _AddrSrc= _AddrSrc, _AddrDest=_AddrDest, _typePaquet=19)
 
         elif _AddrSrc % 19 == 0: # aucune reponse
             self.ecrire_vers_L_ecr(f"aucune reponse pour _numCon {_numCon}")
             result = None
 
-        else:
+        else:   # acceptation de connexion
             self.ecrire_vers_L_ecr(f"Acceptation de la connexion pour _numCon {_numCon}")
-            result = service_manipulation_donnees.pack_comm_etablie(_numCon=_numCon, _AddrSrc=_AddrSrc, _AddrDest=_AddrDest)
+            result = service_manipulation_donnees.pack_N_CONNECT_RESP(_numCon=_numCon, _AddrSrc=_AddrSrc, _AddrDest=_AddrDest)
 
 
         return result
 
     def liberation_de_connection(self, data):
-        _numCon, _typePaquet, _AddrSrc, _AddrDest, _raison = service_manipulation_donnees.unpack_n_disconnect_ind(data)
+        _numCon, _typePaquet, _AddrSrc, _AddrDest, _raison = service_manipulation_donnees.unpack_N_DISCONNECT_IND(data)
         self.ecrire_vers_L_lec(
         f"_numCon:{_numCon}, _AddrSrc:{_AddrSrc}, _AddrDest:{_AddrDest}, _raison:{_raison}")
         self.ecrire_vers_L_ecr(f"Liberation de la connexion pour _numCon {_numCon}")

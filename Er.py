@@ -22,12 +22,13 @@ class Er(threading.Thread):
         self.running = True  # Controlleur de thread
         self.lock = threading.Lock()  # Synchro des informations
 
-    '''
-    Définition : Lit les paquets dans la file Er et les traite en fonction du type de paquet.
-    Input : NA
-    Output : NA
-    '''
+
     def lire_ER(self):
+        """
+        Définition : Lit les paquets dans la file Er et les traite en fonction du type de paquet.
+        Input : NA
+        Output : NA
+        """
         try:
             while self.running:
                 paquet_brut = self.fileEr.get(timeout=0.5)  # Attend paquet
@@ -41,7 +42,7 @@ class Er(threading.Thread):
 
                 logging.info(f"Raw data before unpacking: {data}")
 
-                if type_paquet == 11:  # N_CONNECT
+                if type_paquet == 11:  # N_CONNECT_REQ
                     logging.info(f"Demande de connexion commence: {type_paquet}: {data}")
                     paquet = self.demande_connexion(donnee=data)
                     self.envoyer_ET(paquet)
@@ -62,38 +63,44 @@ class Er(threading.Thread):
         except Exception as e:
             logging.error(f"Error in lire_ER: {e}, Line: {traceback.format_exc()}")
 
-    '''
-    Définition : Envoie un paquet dans la file Et.
-    Input : paquet (données à envoyer)
-    Output : NA
-    '''
+
     def envoyer_ET(self, paquet):
+        """
+        Définition : Envoie un paquet dans la file Et.
+        Input : paquet (données à envoyer)
+        Output : NA
+        """
         with self.lock:  # Garanti un accès thread-safe aux ressources partagées
             self.fileEt.put(paquet)
             logging.debug(f"Packet sent to fileET: {paquet}")
 
-    '''
-    Définition : Méthode principale exécutée lorsque le thread est lancé.
-    Input : NA
-    Output : NA
-    '''
-    def run(self):        
-    # La méthode va commencer seulement si le threading est débuté
+
+    def run(self):
+        """
+        Définition : Méthode principale exécutée lorsque le thread est lancé.
+        Input : NA
+        Output : NA
+        """
+        # La méthode va commencer seulement si le threading est débuté
         while self.running:
             self.lire_ER()
-    '''
-    Définition : Arrête l'exécution du thread.
-    Input : NA
-    Output : NA
-    '''
+
+
     def stop(self):
+        """
+        Définition : Arrête l'exécution du thread.
+        Input : NA
+        Output : NA
+        """
         self.running = False
-    '''
-    Définition : Gère la libération d'une connexion avec le paquet de déconnexion.
-    Input : donnee (données de la connexion à libérer)
-    Output : NA
-    '''
+
+
     def liberation_connexion(self, donnee):
+        """
+        Définition : Gère la libération d'une connexion avec le paquet de déconnexion.
+        Input : donnee (données de la connexion à libérer)
+        Output : NA
+        """
         # Crée une instance de la classe Service_de_liaison
         from Service_de_liaison import Service_de_liaison
         service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
@@ -103,32 +110,32 @@ class Er(threading.Thread):
             type_p,
             addr_src,
             addr_dest,
-        ) = service_manipulation_donnees.unpack_n_disconnect_req(donnee)
+        ) = service_manipulation_donnees.unpack_N_DISCONNECT_REQ(donnee)
         logging.info(
             f"N_DISCONNECT_REQ reçu: NumCon={num_con}, TypePaquet={type_p}, AddrSrc={addr_src},"
             f" AddrDest={addr_dest}"
         )
-        raison = "111"
-        paquet_n_disconnect_ind = service_manipulation_donnees.pack_n_disconnect_ind(num_con, addr_src, addr_dest,
-                                                                                    raison)
+        paquet_n_disconnect_ind = service_manipulation_donnees.pack_N_DISCONNECT_IND(_numCon=num_con, _AddrSrc=addr_src, _AddrDest=addr_dest,
+                                                                                     _Raison=0) # 00000000
 
         service_liaison.liberation_de_connection(paquet_n_disconnect_ind)
 
-    '''
-    Définition : Traite la demande de connexion et crée un paquet de réponse.
-    Input : donnee (données de la demande de connexion)
-    Output : paquet de connexion ou de refus
-    '''
+
     def demande_connexion(self, donnee):
+        """
+        Définition : Traite la demande de connexion et crée un paquet de réponse.
+        Input : donnee (données de la demande de connexion)
+        Output : paquet de connexion ou de refus
+        """
         # Crée une instance de la classe Service_de_liaison
         from Service_de_liaison import Service_de_liaison
-        service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre
+        service_liaison = Service_de_liaison()
         (
             num_con,
             type_p,
             addr_src,
             addr_dest,
-        ) = service_manipulation_donnees.unpack_n_connect(donnee)      #todo: Quelle format sera N_CONNECT.req
+        ) = service_manipulation_donnees.unpack_N_CONNECT_REQ(donnee)
         old_num = num_con
         
         with self.lock:
@@ -141,7 +148,7 @@ class Er(threading.Thread):
         )
 
         if addr_src % 27 == 0:  # Refu si l’adresse de la station source est un multiple de 27
-            result = (15  ,service_manipulation_donnees.pack_n_disconnect_ind(
+            result = (15  ,service_manipulation_donnees.pack_N_DISCONNECT_IND(
                 _numCon= old_num,
                 _AddrSrc=addr_src,
                 _AddrDest=addr_dest,
@@ -159,7 +166,7 @@ class Er(threading.Thread):
                     }
                 logging.info(f"Connection established: {self.tableauConnexion}")
 
-            paquet_appel = service_manipulation_donnees.pack_paquet_d_appel(_numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
+            paquet_appel = service_manipulation_donnees.pack_N_CONNECT_IND(_numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
 
             # Envoie demande vers couche de liaison
             reponse = service_liaison.demande_conn(data=paquet_appel)
@@ -168,8 +175,8 @@ class Er(threading.Thread):
                 packet_type = reponse[1]
 
                 if packet_type == 15:  # Connection established '00001111' = 15
-                    _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_comm_etablie(reponse)
-                    result = ( 11 ,service_manipulation_donnees.pack_comm_etablie(
+                    _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_N_CONNECT_RESP(reponse)
+                    result = ( 11 ,service_manipulation_donnees.pack_N_CONNECT_CONF(
                         _numCon=_num_con, _AddrSrc=addr_src, _AddrDest=addr_dest)
                     ,old_num)
 
@@ -179,35 +186,36 @@ class Er(threading.Thread):
                         logging.info(f"Connection established: {self.tableauConnexion}")
 
                 elif packet_type == 19:  # Connection refused '00010011' = 19
-                    _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
+                    _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_N_DISCONNECT_REQ(
                         reponse)
-                    result = ( 15, service_manipulation_donnees.pack_n_disconnect_ind(
+                    result = ( 15, service_manipulation_donnees.pack_N_DISCONNECT_IND(
                         _numCon=old_num, _AddrSrc=addr_src,
-                        _AddrDest=addr_dest, _Raison=raison)
+                        _AddrDest=addr_dest, _Raison=1) #00000001
                     )
 
 
 
             else:
-                _num_con, type_p, addr_src, addr_dest, raison = service_manipulation_donnees.unpack_n_disconnect_ind(
+                _num_con, type_p, addr_src, addr_dest = service_manipulation_donnees.unpack_N_DISCONNECT_REQ(
                     reponse)
                 logging.info(f"--------------: {_num_con}")
-                result = (15, service_manipulation_donnees.pack_n_disconnect_ind(
+                result = (15, service_manipulation_donnees.pack_N_DISCONNECT_IND(
 
                     _numCon=old_num, _AddrSrc=addr_src,
 
-                    _AddrDest=addr_dest, _Raison=raison
-                ))
+                    _AddrDest=addr_dest, _Raison=1
+                )) #00000001
 
 
-        return result # Todo(): Je return une primitive en un format de paquet
+        return result
 
-    '''
-    Définition : Transfert les données segmentées ou complètes vers la couche de liaison.
-    Input : _numCon (numéro de connexion), donnee (données à transférer)
-    Output : NA
-    '''
+
     def transfert_de_donnees(self, _numCon, donnee):
+        """
+        Définition : Transfert les données segmentées ou complètes vers la couche de liaison.
+        Input : _numCon (numéro de connexion), donnee (données à transférer)
+        Output : NA
+        """
         # Crée une instance de la classe Service_de_liaison
         from Service_de_liaison import Service_de_liaison
         service_liaison = Service_de_liaison()  # todo(): Trouver une place ou le mettre

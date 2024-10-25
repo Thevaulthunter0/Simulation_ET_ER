@@ -132,8 +132,8 @@ class Et(threading.Thread) :
                 if donneeT == "con" and self.tableauConnexion[(id_app, addDest)][1] == "Attente de confirmation":
                     print(f"{threading.get_ident()} : CON")
                     #Creer un paquet de type n_connect
-                    struct_n_connect_req = SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,
-                        11,self.addSrc,addDest)
+                    struct_n_connect_req = SMD.service_manipulation_donnees.pack_N_CONNECT_REQ(thread_local.threadNumCon,
+                                                                                               11, self.addSrc, addDest)
                     self.ecrire_Er(11,struct_n_connect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET))---------------------------------------------------------------------------------------------------------------------------
                     #donnee = (11, SMD.service_manipulation_donnees.pack_n_connect(thread_local.threadNumCon,11,self.addSrc,addDest), )
@@ -145,8 +145,8 @@ class Et(threading.Thread) :
                 elif donneeT == "decon" and self.tableauConnexion[(id_app, addDest)][1] == "connexion établie":
                     print(f"{threading.get_ident()} : DECON")   
                     #Creer un paquet de type n_disconnect
-                    struct_n_disconnect_req = SMD.service_manipulation_donnees.pack_n_disconnect_req(thread_local.threadNumCon,
-                        19,self.addSrc,addDest)
+                    struct_n_disconnect_req = SMD.service_manipulation_donnees.pack_N_DISCONNECT_REQ(thread_local.threadNumCon,
+                                                                                                     19, self.addSrc, addDest)
                     self.ecrire_Er(10,struct_n_disconnect_req)
                     #-----------------TO REMOVE(WILL ACTUALLY BE DONE IN THE SECTION BELOW(LIRE SUR LA FILEET)---------------------------------------------------------------------------------------------------------------------------
                     #donnee = {"type_paquet" : 15, "data" : SMD.service_manipulation_donnees.pack_n_disconnect_ind(thread_local.threadNumCon,0,self.addSrc,addDest,1)}
@@ -223,15 +223,15 @@ class Et(threading.Thread) :
             print(str(pack_donnee))
             match type :
                 case 11:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_comm_etablie(pack_donnee[1])
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_N_CONNECT_CONF(pack_donnee[1])
                     with self.lockCon :
                         self.tableauConnexion[(id_app,addDest)] = (thread_local.threadNumCon, "connexion établie")
 
                 case 15:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee[1])
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_N_DISCONNECT_IND(pack_donnee[1])
 
                 case 10:
-                    unpack_donnee = SMD.service_manipulation_donnees.unpack_n_disconnect_ind(pack_donnee[1])
+                    unpack_donnee = SMD.service_manipulation_donnees.unpack_N_DISCONNECT_IND(pack_donnee[1])
                 
                 case 21:
                     unpack_donnee = SMD.service_manipulation_donnees.unpack_n_akn_pos(pack_donnee[1])
